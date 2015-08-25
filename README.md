@@ -11,7 +11,7 @@ Official redis plugin for dokku. Currently installs redis 3.0.3.
 
 ```
 cd /var/lib/dokku/plugins
-git clone https://github.com/dokku/dokku-redis-plugin.git redis
+git clone https://github.com/dokku/dokku-redis.git redis
 dokku plugins-install-dependencies
 dokku plugins-install
 ```
