@@ -1,14 +1,6 @@
 #!/usr/bin/env bash
 set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
-
-REDIS_IMAGE="redis"
-REDIS_IMAGE_VERSION=3.0.3
-REDIS_ROOT=/var/lib/dokku/services/redis
-
-PLUGIN_DATA_ROOT=$REDIS_ROOT
-PLUGIN_SERVICE="Redis"
-PLUGIN_IMAGE=$REDIS_IMAGE
-PLUGIN_IMAGE_VERSION=$REDIS_IMAGE_VERSION
+source "$(dirname "$0")/config"
 
 if ! docker images | grep -e "^$PLUGIN_IMAGE " | grep -q $PLUGIN_IMAGE_VERSION ; then
   docker pull $PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION

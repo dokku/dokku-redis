@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
-
-PLUGIN_DATA_ROOT=/var/lib/dokku/services/redis
-PLUGIN_SERVICE="Redis"
+source "$(dirname "$0")/config"
 
 get_random_port() {
   local port=$RANDOM
@@ -38,7 +36,7 @@ service_alias() {
   if [[ -f "$ALIAS_FILE" ]]; then
     cat "$ALIAS_FILE"
   else
-    echo "REDIS"
+    echo "$PLUGIN_DEFAULT_ALIAS"
   fi
 }
 
@@ -49,5 +47,5 @@ service_url() {
 
   local ID="$(cat "$SERVICE_ROOT/ID")"
   local IP="$(get_container_ip "$ID")"
-  echo "redis://$IP:6379/0"
+  echo "$PLUGIN_SCHEME://$IP:$PLUGIN_DATASTORE_PORT/0"
 }

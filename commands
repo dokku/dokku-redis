@@ -2,16 +2,7 @@
 set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 source "$(dirname "$0")/../common/functions"
 source "$(dirname "$0")/functions"
-
-REDIS_IMAGE=${REDIS_IMAGE:="redis"}
-REDIS_IMAGE_VERSION=${REDIS_IMAGE_VERSION:="3.0.3"}
-REDIS_ROOT=/var/lib/dokku/services/redis
-
-PLUGIN_COMMAND_PREFIX="redis"
-PLUGIN_DATA_ROOT=$REDIS_ROOT
-PLUGIN_SERVICE="Redis"
-PLUGIN_IMAGE=$REDIS_IMAGE
-PLUGIN_IMAGE_VERSION=$REDIS_IMAGE_VERSION
+source "$(dirname "$0")/config"
 
 if [[ ! -d $PLUGIN_DATA_ROOT ]]; then
   dokku_log_fail "$PLUGIN_SERVICE: Please run: sudo dokku plugins-install"
