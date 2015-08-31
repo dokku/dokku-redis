@@ -111,6 +111,95 @@ service_status() {
   echo "(stopped)" && return 0
 }
 
+service_port_expose() {
+  service_port_unpause "$1" "true"
+}
+
+service_port_pause() {
+  local SERVICE="$1"
+  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
+  local PORT_FILE="$SERVICE_ROOT/PORT"
+  local DESTINATION_FILE="$SERVICE_ROOT/IPTABLES_DESTINATION"
+  local LOG_FAIL="$2"
+
+  if [[ "$LOG_FAIL" == "true" ]]; then
+    [[ ! -f "$PORT_FILE" ]] && dokku_log_fail "Service not exposed"
+  else
+    [[ ! -f "$PORT_FILE" ]] && return 0
+  fi
+
+  local ID=$(cat "$SERVICE_ROOT/ID")
+  local IP=$(get_container_ip "$ID")
+  local PORT=$(cat "$PORT_FILE")
+  local DESTINATION=$(cat "$DESTINATION_FILE")
+
+  sudo /sbin/iptables -t nat -D DOCKER -p tcp --dport "$PORT" -j DNAT --to-destination "$DESTINATION"
+}
+
+service_port_unexpose() {
+  service_port_pause "$1" "true"
+  rm -rf "$PORT_FILE"
+}
+
+service_port_unpause() {
+  local SERVICE="$1"
+  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
+  local PORT_FILE="$SERVICE_ROOT/PORT"
+  local DESTINATION_FILE="$SERVICE_ROOT/IPTABLES_DESTINATION"
+  local LOG_FAIL="$2"
+  local PORT=$(get_random_port)
+  local ID=$(cat "$SERVICE_ROOT/ID")
+  local IP=$(get_container_ip "$ID")
+  local DESTINATION="$IP:$PLUGIN_DATASTORE_PORT"
+
+  if [[ "$LOG_FAIL" == "true" ]]; then
+    [[ -f "$PORT_FILE" ]] && PORT=$(cat "$PORT_FILE") && dokku_log_fail "Service $SERVICE already exposed on port $PORT"
+  else
+    [[ ! -f "$PORT_FILE" ]] && return 0
+    PORT=$(cat "$PORT_FILE") && sudo /sbin/iptables -t nat -D DOCKER -p tcp --dport "$PORT" -j DNAT --to-destination "$DESTINATION"
+  fi
+
+  echo "$PORT" > "$PORT_FILE"
+  echo "$DESTINATION" > "$DESTINATION_FILE"
+
+  echo "$DESTINATION"
+
+  sudo /sbin/iptables -t nat -A DOCKER -p tcp --dport "$PORT" -j DNAT --to-destination "$DESTINATION"
+  if [[ "$LOG_FAIL" == "true" ]]; then
+    dokku_log_info1 "Service $SERVICE exposed on port $PORT"
+  fi
+}
+
+service_start() {
+  local SERVICE="$1"
+  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
+
+  dokku_log_verbose_quiet "Starting container"
+  if [[ -f "$SERVICE_ROOT/ID" ]] && docker ps -aq --no-trunc | grep -q $(cat "$SERVICE_ROOT/ID"); then
+    ID=$(cat "$SERVICE_ROOT/ID")
+    docker start "$ID" > /dev/null
+    service_port_unpause "$SERVICE"
+    dokku_log_info2 "Container started"
+  else
+    dokku_log_verbose_quiet "No container exists for $SERVICE"
+  fi
+}
+
+service_stop() {
+  local SERVICE="$1"
+  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE";
+
+  if [[ -f "$SERVICE_ROOT/ID" ]] && docker ps -aq --no-trunc | grep -q $(cat "$SERVICE_ROOT/ID"); then
+    dokku_log_verbose_quiet "Stopping container"
+    ID=$(cat "$SERVICE_ROOT/ID")
+    docker stop "$ID" > /dev/null
+    service_port_pause "$SERVICE"
+    dokku_log_info2 "Container stopped"
+  else
+    dokku_log_verbose_quiet "No container exists for $SERVICE"
+  fi
+}
+
 service_unlink() {
   local APP="$2"
   local SERVICE="$1"

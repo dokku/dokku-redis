@@ -8,3 +8,15 @@ fi
 
 mkdir -p $PLUGIN_DATA_ROOT || echo "Failed to create $PLUGIN_SERVICE directory"
 chown dokku:dokku $PLUGIN_DATA_ROOT
+
+case "$DOKKU_DISTRO" in
+  ubuntu)
+    echo "%dokku ALL=(ALL) NOPASSWD:/sbin/iptables -t nat -A DOCKER -p tcp *, /sbin/iptables -t nat -D DOCKER -p tcp *" > /etc/sudoers.d/dokku-redis
+    ;;
+
+  opensuse)
+    echo "%dokku ALL=(ALL) NOPASSWD:/sbin/iptables -t nat -A DOCKER -p tcp *, /sbin/iptables -t nat -D DOCKER -p tcp *" > /etc/sudoers.d/dokku-redis
+    ;;
+esac
+
+chmod 0440 /etc/sudoers.d/dokku-redis
