@@ -77,7 +77,7 @@ case "$1" in
 
       service_stop "$SERVICE"
       dokku_log_verbose_quiet "Killing container"
-      docker kill "$ID" > /dev/null
+      docker kill "$ID" > /dev/null || true
       sleep 1
 
       dokku_log_verbose_quiet "Removing container"
