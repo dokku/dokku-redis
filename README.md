@@ -31,7 +31,9 @@ redis:info <name>              Print the connection information
 redis:link <name> <app>        Link the redis service to the app
 redis:list                     List all redis services
 redis:logs <name> [-t]         Print the most recent log(s) for this service
-redis:restart <name>           Graceful shutdown and restart of the service container
+redis:restart <name>           Graceful shutdown and restart of the redis service container
+redis:start <name>             Start a previously stopped redis service
+redis:stop <name>              Stop a running redis service
 redis:unexpose <name>          Unexpose a previously exposed redis service
 redis:unlink <name> <app>      Unlink the redis service from the app
 ```
