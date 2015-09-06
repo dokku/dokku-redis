@@ -175,7 +175,7 @@ service_port_unpause() {
 
   echo "${PORTS[@]}" > "$PORT_FILE"
 
-  docker run -d --link "$SERVICE_NAME:redis" --name "$EXPOSED_NAME" $(docker_ports_options "${PORTS[@]}") --restart always svendowideit/ambassador > /dev/null
+  docker run -d --link "$SERVICE_NAME:redis" --name "$EXPOSED_NAME" $(docker_ports_options "${PORTS[@]}") --restart always --label dokku=ambassador --label dokku.ambassador=redis svendowideit/ambassador > /dev/null
   if [[ "$LOG_FAIL" == "true" ]]; then
     dokku_log_info1 "Service $SERVICE exposed on port(s) ${PORTS[*]}"
   fi
