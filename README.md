@@ -67,7 +67,7 @@ dokku redis:link lolipop playground
 # the above will expose the following environment variables
 #
 #   REDIS_URL=redis://172.17.0.1:6379
-#   REDIS_NAME=/playground/DATABASE
+#   REDIS_NAME=/lolipop/DATABASE
 #   REDIS_PORT=tcp://172.17.0.1:6379
 #   REDIS_PORT_6379_TCP=tcp://172.17.0.1:6379
 #   REDIS_PORT_6379_TCP_PROTO=tcp
@@ -87,7 +87,7 @@ dokku redis:logs lolipop
 dokku redis:logs lolipop -t # to tail
 
 # finally, you can destroy the container
-dokku redis:destroy playground
+dokku redis:destroy lolipop
 ```
 
 ## todo
