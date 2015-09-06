@@ -75,6 +75,8 @@ case "$1" in
       docker exec -it "$ID" chmod -R 777 /data
 
       service_stop "$SERVICE"
+      dokku_log_verbose_quiet "Killing container"
+      docker kill "$ID" > /dev/null
 
       dokku_log_verbose_quiet "Removing container"
       docker rm -v "$ID" > /dev/null
