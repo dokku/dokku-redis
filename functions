@@ -195,7 +195,7 @@ service_start() {
   local ID=$(docker ps -f status=running | grep "$SERVICE_NAME" | awk '{print $1}') || true
   [[ -n $ID ]] && dokku_log_fail "Service is already started"
 
-  dokku_log_verbose_quiet "Starting container"
+  dokku_log_info1_quiet "Starting container"
   local PREVIOUS_ID=$(docker ps -f status=exited | grep "$SERVICE_NAME" | awk '{print $1}') || true
   if [[ -n $PREVIOUS_ID ]]; then
     docker start "$PREVIOUS_ID" > /dev/null
@@ -214,7 +214,7 @@ service_stop() {
   [[ -z $ID ]] && dokku_log_fail "Service is already stopped"
 
   if [[ -n $ID ]]; then
-    dokku_log_verbose_quiet "Stopping container"
+    dokku_log_info1_quiet "Stopping container"
     docker stop "$SERVICE_NAME" > /dev/null
     service_port_pause "$SERVICE"
     dokku_log_info2 "Container stopped"
