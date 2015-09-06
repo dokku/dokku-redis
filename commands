@@ -72,6 +72,7 @@ case "$1" in
       ID=$(cat "$SERVICE_ROOT/ID")
 
       dokku_log_verbose_quiet "Deleting container data"
+      service_start "$SERVICE"
       docker exec -it "$ID" chmod -R 777 /data
 
       service_stop "$SERVICE"
