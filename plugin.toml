@@ -1,0 +1,4 @@
+[plugin]
+description = "dokku redis service plugin"
+version = "1.0.0"
+[plugin.config]
