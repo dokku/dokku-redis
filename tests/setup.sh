@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source "$(dirname $0)/unit/test_helper.bash"
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/unit/test_helper.bash"
 
 if [[ ! -d $DOKKU_ROOT ]]; then
   git clone https://github.com/progrium/dokku.git $DOKKU_ROOT > /dev/null
