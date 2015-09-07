@@ -3,7 +3,7 @@
 export DOKKU_QUIET_OUTPUT=1
 export DOKKU_ROOT="tests/dokku"
 export DOKKU_VERSION=${DOKKU_VERSION:-"master"}
-export PATH="$(dirname $0)/../dokku:$PATH"
+export PATH="$(dirname $0)/dokku:$PATH"
 export PLUGIN_PATH="$DOKKU_ROOT/plugins"
 export SERVICE=redis
 
