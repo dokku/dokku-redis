@@ -22,7 +22,7 @@ case "$1" in
       exit 0
     else
       echo "CONTAINER ID        IMAGE                      COMMAND                CREATED             STATUS              PORTS               NAMES"
-      echo "testid              dokku/ruby-sample:latest   \"/start web\"           About an hour ago   Up About an hour                        adoring_turing"
+      echo "testid              redis:3.0.3                \"/entrypoint.sh redi   5 minutes ago       Up 5 minutes                   6379/tcp            dokku.redis.l"
     fi
     ;;
   exec)
