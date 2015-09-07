@@ -1,0 +1,7 @@
+language: bash
+env:
+  - DOKKU_VERSION=master
+matrix:
+  allow_failures:
+    - env: DOKKU_VERSION=master
+script: make test
