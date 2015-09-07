@@ -37,7 +37,5 @@ unit-tests:
 setup:
 	bash tests/setup.sh
 	$(MAKE) ci-dependencies
-	./install
-	./dependencies
 
 test: setup lint unit-tests
