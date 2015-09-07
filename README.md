@@ -25,14 +25,16 @@ redis:connect <name>           Connect via redis-cli to a redis service
 redis:create <name>            Create a redis service
 redis:destroy <name>           Delete the service and stop its container if there are no links left
 redis:export <name>            NOT IMPLEMENTED
-redis:expose <name> <port>     NOT IMPLEMENTED
+redis:expose <name> [port]     Expose a redis service on custom port if provided (random port otherwise)
 redis:import <name> <file>     NOT IMPLEMENTED
 redis:info <name>              Print the connection information
 redis:link <name> <app>        Link the redis service to the app
 redis:list                     List all redis services
 redis:logs <name> [-t]         Print the most recent log(s) for this service
-redis:restart <name>           Graceful shutdown and restart of the service container
-redis:unexpose <name> <port>   NOT IMPLEMENTED
+redis:restart <name>           Graceful shutdown and restart of the redis service container
+redis:start <name>             Start a previously stopped redis service
+redis:stop <name>              Stop a running redis service
+redis:unexpose <name>          Unexpose a previously exposed redis service
 redis:unlink <name> <app>      Unlink the redis service from the app
 ```
 
@@ -65,7 +67,7 @@ dokku redis:link lolipop playground
 # the above will expose the following environment variables
 #
 #   REDIS_URL=redis://172.17.0.1:6379
-#   REDIS_NAME=/playground/DATABASE
+#   REDIS_NAME=/lolipop/DATABASE
 #   REDIS_PORT=tcp://172.17.0.1:6379
 #   REDIS_PORT_6379_TCP=tcp://172.17.0.1:6379
 #   REDIS_PORT_6379_TCP_PROTO=tcp
@@ -85,7 +87,7 @@ dokku redis:logs lolipop
 dokku redis:logs lolipop -t # to tail
 
 # finally, you can destroy the container
-dokku redis:destroy playground
+dokku redis:destroy lolipop
 ```
 
 ## todo
