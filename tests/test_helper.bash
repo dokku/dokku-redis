@@ -5,7 +5,10 @@ export DOKKU_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/dokku"
 export DOKKU_VERSION=${DOKKU_VERSION:-"master"}
 export PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/bin:$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/dokku:$PATH"
 export PLUGIN_PATH="$DOKKU_ROOT/plugins"
+export PLUGIN_DATA_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/fixtures"
 export SERVICE=redis
+
+mkdir -p $PLUGIN_DATA_ROOT
 
 flunk() {
   { if [ "$#" -eq 0 ]; then cat -
