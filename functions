@@ -122,6 +122,7 @@ service_status() {
 }
 
 service_port_expose() {
+  service_start "$1"
   service_port_unpause "$1" "true" "${@:2}"
 }
 
