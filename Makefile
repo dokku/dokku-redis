@@ -32,7 +32,7 @@ lint:
 
 unit-tests:
 	@echo running unit tests...
-	@$(QUIET) bats tests/unit
+	@$(QUIET) bats tests
 
 setup:
 	bash tests/setup.sh
