@@ -1,29 +1,28 @@
 #!/usr/bin/env bats
-
 load test_helper
 
 @test "(service) dokku" {
-  dokku $SERVICE:create l
+  dokku $PLUGIN_COMMAND_PREFIX:create l
   assert_success
 
-  dokku $SERVICE:info l
+  dokku $PLUGIN_COMMAND_PREFIX:info l
   assert_success
 
-  dokku $SERVICE:stop l
+  dokku $PLUGIN_COMMAND_PREFIX:stop l
   assert_success
 
-  dokku $SERVICE:stop l
+  dokku $PLUGIN_COMMAND_PREFIX:stop l
   assert_success
 
-  dokku $SERVICE:expose l
+  dokku $PLUGIN_COMMAND_PREFIX:expose l
   assert_success
 
-  dokku $SERVICE:restart l
+  dokku $PLUGIN_COMMAND_PREFIX:restart l
   assert_success
 
-  dokku $SERVICE:info l
+  dokku $PLUGIN_COMMAND_PREFIX:info l
   assert_success
 
-  dokku --force $SERVICE:destroy l
+  dokku --force $PLUGIN_COMMAND_PREFIX:destroy l
   assert_success
 }
