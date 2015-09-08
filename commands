@@ -8,10 +8,6 @@ if [[ ! -d $PLUGIN_DATA_ROOT ]]; then
   dokku_log_fail "$PLUGIN_SERVICE: Please run: sudo dokku plugins-install"
 fi
 
-if ! command -v redis-cli &>/dev/null; then
-  dokku_log_fail "$PLUGIN_SERVICE: Please run: sudo dokku plugins-install-dependencies"
-fi
-
 case "$1" in
   $PLUGIN_COMMAND_PREFIX:alias)
     [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
@@ -155,10 +151,10 @@ case "$1" in
     [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
     verify_service_name "$2"
     SERVICE="$2"; SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
+    SERVICE_NAME=$(get_service_name "$SERVICE")
 
-    ID=$(cat "$SERVICE_ROOT/ID")
-    IP=$(get_container_ip "$ID")
-    redis-cli -h "$IP" -p 6379
+    # shellcheck disable=SC2016
+    docker run -it --link "$SERVICE_NAME:redis" --rm "$PLUGIN_IMAGE" sh -c 'exec redis-cli -h "$REDIS_PORT_6379_TCP_ADDR" -p "$REDIS_PORT_6379_TCP_PORT"'
     ;;
 
   $PLUGIN_COMMAND_PREFIX:info)
