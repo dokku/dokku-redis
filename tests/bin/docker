@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+if [[ $ECHO_DOCKER_COMMAND == "true" ]]; then
+  echo "$(basename "$0") $*"
+  exit 0
+fi
+
 case "$1" in
   stop)
     echo "testid"
