@@ -127,7 +127,7 @@ service_status() {
 }
 
 service_port_expose() {
-  service_start "$1"
+  service_start "$1" "true"
   service_port_unpause "$1" "true" "${@:2}"
 }
 
@@ -196,10 +196,14 @@ docker_ports_options() {
 
 service_start() {
   local SERVICE="$1"
+  local QUIET="$2"
   local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
   local SERVICE_NAME=$(get_service_name "$SERVICE")
   local ID=$(docker ps -f status=running | grep "$SERVICE_NAME" | awk '{print $1}') || true
-  [[ -n $ID ]] && dokku_log_warn "Service is already started" && return 0
+  if [[ -n $ID ]]; then
+    [[ -z $QUIET ]] && dokku_log_warn "Service is already started"
+    return 0
+  fi
 
   dokku_log_info1_quiet "Starting container"
   local PREVIOUS_ID=$(docker ps -f status=exited | grep "$SERVICE_NAME" | awk '{print $1}') || true
