@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+if [[ $ECHO_DOCKER_COMMAND == "true" ]]; then
+  echo "$(basename "$0") $*"
+  exit 0
+fi
+
 case "$1" in
   stop)
     echo "testid"
@@ -42,6 +47,15 @@ case "$1" in
       exit 0
     fi
 
+    if [[ $@ =~ \{\{\.State\..*\}\} ]]; then
+      if [[ $@ =~ \{\{\.State\.Running\}\} ]]; then
+        echo "true"
+      else
+        echo "false"
+      fi
+      exit 0
+    fi
+
     # running
     echo "true"
     ;;
@@ -60,6 +74,9 @@ case "$1" in
     ;;
   pull)
     exit 0
+    ;;
+  logs)
+    echo "1:M 08 Sep 07:36:43.544 # Server started, Redis version 3.0.3"
     ;;
   *)
     exit "$DOKKU_NOT_IMPLEMENTED_EXIT"
