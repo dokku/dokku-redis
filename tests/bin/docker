@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# shellcheck source=../../config
+# shellcheck disable=SC1091
+source "$(dirname "$0")/../../config"
+
 if [[ $ECHO_DOCKER_COMMAND == "true" ]]; then
   echo "$(basename "$0") $*"
   exit 0
@@ -76,7 +80,7 @@ case "$1" in
     exit 0
     ;;
   logs)
-    echo "1:M 08 Sep 07:36:43.544 # Server started, Redis version 3.0.3"
+    echo "$PLUGIN_SERVICE $PLUGIN_IMAGE_VERSION"
     ;;
   *)
     exit "$DOKKU_NOT_IMPLEMENTED_EXIT"
