@@ -20,13 +20,13 @@ dokku plugins-install
 
 ```
 redis:alias <name> <alias>     Set an alias for the docker link
-redis:clone <name> <new-name>  NOT IMPLEMENTED
+redis:clone <name> <new-name>  Create container <new-name> then copy data from <name> into <new-name>
 redis:connect <name>           Connect via redis-cli to a redis service
 redis:create <name>            Create a redis service
 redis:destroy <name>           Delete the service and stop its container if there are no links left
-redis:export <name>            NOT IMPLEMENTED
+redis:export <name>            Export a dump of the redis service database
 redis:expose <name> [port]     Expose a redis service on custom port if provided (random port otherwise)
-redis:import <name> <file>     NOT IMPLEMENTED
+redis:import <name> <file>     Import a dump into the redis service database
 redis:info <name>              Print the connection information
 redis:link <name> <app>        Link the redis service to the app
 redis:list                     List all redis services
@@ -85,6 +85,15 @@ dokku redis:unlink lolipop playground
 # you can tail logs for a particular service
 dokku redis:logs lolipop
 dokku redis:logs lolipop -t # to tail
+
+# you can dump the database
+dokku redis:export lolipop > lolipop.rdb
+
+# you can import a dump
+dokku redis:import lolipop < database.rdb
+
+# you can clone an existing database to a new one
+dokku redis:clone lolipop new_database
 
 # finally, you can destroy the container
 dokku redis:destroy lolipop

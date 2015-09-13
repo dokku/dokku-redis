@@ -106,16 +106,24 @@ case "$1" in
     [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
     verify_service_name "$2"
     SERVICE="$2"; SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
+    SERVICE_NAME=$(get_service_name "$SERVICE")
 
-    dokku_log_fail "Not yet implemented"
+    docker exec "$SERVICE_NAME" bash -c "echo SAVE | redis-cli" > /dev/null 2>&1
+    docker exec "$SERVICE_NAME" cat /data/dump.rdb
     ;;
 
   $PLUGIN_COMMAND_PREFIX:import)
     [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
     verify_service_name "$2"
-    SERVICE="$2"
+    SERVICE="$2"; SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
+    SERVICE_NAME=$(get_service_name "$SERVICE")
 
-    dokku_log_fail "Not yet implemented"
+    if [[ -t 0 ]]; then
+      dokku_log_fail "No data provided on stdin."
+    fi
+    dokku "$PLUGIN_COMMAND_PREFIX:stop" "$SERVICE" > /dev/null 2>&1
+    docker run --rm -i -v "$SERVICE_ROOT/data:/data" "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" bash -c "cat > /data/dump.rdb && chown redis: /data/dump.rdb"
+    dokku "$PLUGIN_COMMAND_PREFIX:start" "$SERVICE" > /dev/null 2>&1
     ;;
 
   $PLUGIN_COMMAND_PREFIX:logs)
@@ -166,10 +174,14 @@ case "$1" in
 
   $PLUGIN_COMMAND_PREFIX:clone)
     [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
+    [[ -z $3 ]] && dokku_log_fail "Please specify a name for the new service"
     verify_service_name "$2"
     SERVICE="$2"
-
-    dokku_log_fail "Not yet implemented"
+    NEW_SERVICE="$3"
+    dokku "$PLUGIN_COMMAND_PREFIX:create" "$NEW_SERVICE"
+    dokku_log_info1 "Copying data from $SERVICE to $NEW_SERVICE"
+    dokku "$PLUGIN_COMMAND_PREFIX:export" "$SERVICE" | dokku "$PLUGIN_COMMAND_PREFIX:import" "$NEW_SERVICE" > /dev/null 2>&1 || true
+    dokku_log_info1 "Done"
     ;;
 
   $PLUGIN_COMMAND_PREFIX:expose)
@@ -191,14 +203,14 @@ case "$1" in
     $PLUGIN_COMMAND_PREFIX:destroy <name>, Delete the $PLUGIN_SERVICE service and stop its container if there are no links left
     $PLUGIN_COMMAND_PREFIX:link <name> <app>, Link the $PLUGIN_SERVICE service to the app
     $PLUGIN_COMMAND_PREFIX:unlink <name> <app>, Unlink the $PLUGIN_SERVICE service from the app
-    $PLUGIN_COMMAND_PREFIX:export <name>, NOT IMPLEMENTED
-    $PLUGIN_COMMAND_PREFIX:import <name> <file>, NOT IMPLEMENTED
+    $PLUGIN_COMMAND_PREFIX:export <name>, Export a dump of the $PLUGIN_SERVICE service database
+    $PLUGIN_COMMAND_PREFIX:import <name> < <file>, Import a dump into the $PLUGIN_SERVICE service database
     $PLUGIN_COMMAND_PREFIX:connect <name>, Connect via redis-cli to a $PLUGIN_SERVICE service
     $PLUGIN_COMMAND_PREFIX:logs <name> [-t], Print the most recent log(s) for this service
     $PLUGIN_COMMAND_PREFIX:restart <name>, Graceful shutdown and restart of the $PLUGIN_SERVICE service container
     $PLUGIN_COMMAND_PREFIX:info <name>, Print the connection information
     $PLUGIN_COMMAND_PREFIX:list, List all $PLUGIN_SERVICE services
-    $PLUGIN_COMMAND_PREFIX:clone <name> <new-name>, NOT IMPLEMENTED
+    $PLUGIN_COMMAND_PREFIX:clone <name> <new-name>, Create container <new-name> then copy data from <name> into <new-name>
     $PLUGIN_COMMAND_PREFIX:expose <name> [port], Expose a $PLUGIN_SERVICE service on custom port if provided (random port otherwise)
     $PLUGIN_COMMAND_PREFIX:unexpose <name>, Unexpose a previously exposed $PLUGIN_SERVICE service
     $PLUGIN_COMMAND_PREFIX:start <name>, Start a previously stopped $PLUGIN_SERVICE service
