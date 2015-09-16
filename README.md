@@ -98,9 +98,3 @@ dokku redis:clone lolipop new_database
 # finally, you can destroy the container
 dokku redis:destroy lolipop
 ```
-
-## todo
-
-- implement redis:clone
-- implement redis:expose
-- implement redis:import
