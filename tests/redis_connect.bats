@@ -24,6 +24,6 @@ teardown() {
 @test "($PLUGIN_COMMAND_PREFIX:connect) success" {
   export ECHO_DOCKER_COMMAND="true"
   run dokku "$PLUGIN_COMMAND_PREFIX:connect" l
-  assert_output 'docker run -it --link dokku.redis.l:redis --rm redis sh -c exec redis-cli -h "$REDIS_PORT_6379_TCP_ADDR" -p "$REDIS_PORT_6379_TCP_PORT"'
+  assert_output 'docker exec -i -t dokku.redis.l redis-cli'
 }
 
