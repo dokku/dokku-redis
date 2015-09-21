@@ -164,9 +164,9 @@ case "$1" in
     verify_service_name "$2"
     SERVICE="$2"; SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
     SERVICE_NAME=$(get_service_name "$SERVICE")
+    has_tty && SERVICE_TTY_OPTS="-t"
 
-    # shellcheck disable=SC2016
-    docker run -it --link "$SERVICE_NAME:redis" --rm "$PLUGIN_IMAGE" sh -c 'exec redis-cli -h "$REDIS_PORT_6379_TCP_ADDR" -p "$REDIS_PORT_6379_TCP_PORT"'
+    docker exec -i $SERVICE_TTY_OPTS "$SERVICE_NAME" redis-cli
     ;;
 
   $PLUGIN_COMMAND_PREFIX:info)
