@@ -22,7 +22,6 @@ dokku plugin:install https://github.com/dokku/dokku-redis.git redis
 ## commands
 
 ```
-redis:alias <name> <alias>     Set an alias for the docker link
 redis:clone <name> <new-name>  Create container <new-name> then copy data from <name> into <new-name>
 redis:connect <name>           Connect via redis-cli to a redis service
 redis:create <name>            Create a redis service
@@ -34,6 +33,7 @@ redis:info <name>              Print the connection information
 redis:link <name> <app>        Link the redis service to the app
 redis:list                     List all redis services
 redis:logs <name> [-t]         Print the most recent log(s) for this service
+redis:promote <name> <app>     Promote service <name> as REDIS_URL in <app>
 redis:restart <name>           Graceful shutdown and restart of the redis service container
 redis:start <name>             Start a previously stopped redis service
 redis:stop <name>              Stop a running redis service
@@ -58,8 +58,6 @@ dokku redis:create lolipop
 # get connection information as follows
 dokku redis:info lolipop
 
-# lets assume the ip of our redis service is 172.17.0.1
-
 # a redis service can be linked to a
 # container this will use native docker
 # links via the docker-options plugin
@@ -69,24 +67,42 @@ dokku redis:link lolipop playground
 
 # the above will expose the following environment variables
 #
-#   REDIS_URL=redis://172.17.0.1:6379
-#   REDIS_NAME=/lolipop/DATABASE
-#   REDIS_PORT=tcp://172.17.0.1:6379
-#   REDIS_PORT_6379_TCP=tcp://172.17.0.1:6379
-#   REDIS_PORT_6379_TCP_PROTO=tcp
-#   REDIS_PORT_6379_TCP_PORT=6379
-#   REDIS_PORT_6379_TCP_ADDR=172.17.0.1
+#   DOKKU_REDIS_LOLIPOP_NAME=/lolipop/DATABASE
+#   DOKKU_REDIS_LOLIPOP_PORT=tcp://172.17.0.1:6379
+#   DOKKU_REDIS_LOLIPOP_PORT_6379_TCP=tcp://172.17.0.1:6379
+#   DOKKU_REDIS_LOLIPOP_PORT_6379_TCP_PROTO=tcp
+#   DOKKU_REDIS_LOLIPOP_PORT_6379_TCP_PORT=6379
+#   DOKKU_REDIS_LOLIPOP_PORT_6379_TCP_ADDR=172.17.0.1
+#
+# and the following will be set on the linked application by default
+#
+#   REDIS_URL=redis://dokku-redis-lolipop:6379/0
+#
+# NOTE: the host exposed here only works internally in docker containers. If
+# you want your container to be reachable from outside, you should use `expose`.
 
-# you can examine the environment variables
-# using our 'playground' app's env command
-dokku run playground env
+# another service can be linked to your app
+dokku redis:link other_service playground
 
-# you can customize the environment
-# variables through a custom docker link alias
-dokku redis:alias lolipop REDIS_DATABASE
+# since REDIS_URL is already in use, another environment variable will be
+# generated automatically
+#
+#   DOKKU_REDIS_BLUE_URL=redis://dokku-redis-other-service:6379/0
+
+# you can then promote the new service to be the primary one
+# NOTE: this will restart your app
+dokku redis:promote other_service playground
+
+# this will replace REDIS_URL with the url from other_service and generate
+# another environment variable to hold the previous value if necessary.
+# you could end up with the following for example:
+#
+#   REDIS_URL=redis://dokku-redis-other-service:6379/0
+#   DOKKU_REDIS_BLUE_URL=redis://dokku-redis-other-service:6379/0
+#   DOKKU_REDIS_SILVER_URL=redis://dokku-redis-lolipop:6379/lolipop
 
 # you can also unlink a redis service
-# NOTE: this will restart your app
+# NOTE: this will restart your app and unset related environment variables
 dokku redis:unlink lolipop playground
 
 # you can tail logs for a particular service
