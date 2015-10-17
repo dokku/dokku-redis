@@ -104,8 +104,10 @@ case "$1" in
     SERVICE="$2"; SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
     SERVICE_NAME=$(get_service_name "$SERVICE")
 
+    [[ -n $SSH_TTY ]] && stty -opost
     docker exec "$SERVICE_NAME" bash -c "echo SAVE | redis-cli" > /dev/null 2>&1
     docker exec "$SERVICE_NAME" cat /data/dump.rdb
+    [[ -n $SSH_TTY ]] && stty opost
     ;;
 
   $PLUGIN_COMMAND_PREFIX:import)
