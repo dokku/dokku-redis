@@ -31,6 +31,6 @@ teardown() {
 @test "($PLUGIN_COMMAND_PREFIX:import) success" {
   export ECHO_DOCKER_COMMAND="true"
   run dokku "$PLUGIN_COMMAND_PREFIX:import" l < "$PLUGIN_DATA_ROOT/fake.rdb"
-  assert_output "docker run --rm -i -v $PLUGIN_DATA_ROOT/l/data:/data redis:3.0.4 bash -c cat > /data/dump.rdb && chown redis: /data/dump.rdb"
+  assert_output "docker run --rm -i -v $PLUGIN_DATA_ROOT/l/data:/data redis:3.0.5 bash -c cat > /data/dump.rdb && chown redis: /data/dump.rdb"
 }
 
