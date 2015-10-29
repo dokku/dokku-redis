@@ -26,7 +26,7 @@ redis:clone <name> <new-name>  Create container <new-name> then copy data from <
 redis:connect <name>           Connect via redis-cli to a redis service
 redis:create <name>            Create a redis service
 redis:destroy <name>           Delete the service and stop its container if there are no links left
-redis:export <name>            Export a dump of the redis service database
+redis:export <name> > <file>   Export a dump of the redis service database
 redis:expose <name> [port]     Expose a redis service on custom port if provided (random port otherwise)
 redis:import <name> <file>     Import a dump into the redis service database
 redis:info <name>              Print the connection information
