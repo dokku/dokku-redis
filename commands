@@ -31,8 +31,13 @@ case "$1" in
     touch "$LINKS_FILE"
 
     dokku_log_info1 "Starting container"
+    if [[ -n $REDIS_CUSTOM_ENV ]]; then
+      echo "$REDIS_CUSTOM_ENV" | tr ';' "\n" > "$SERVICE_ROOT/ENV"
+    else
+      echo "" > "$SERVICE_ROOT/ENV"
+    fi
     SERVICE_NAME=$(get_service_name "$SERVICE")
-    ID=$(docker run --name "$SERVICE_NAME" -v "$SERVICE_ROOT/data:/data" -v "$SERVICE_ROOT/config:/usr/local/etc/redis" -d --restart always --label dokku=service --label dokku.service=redis "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION")
+    ID=$(docker run --name "$SERVICE_NAME" -v "$SERVICE_ROOT/data:/data" -v "$SERVICE_ROOT/config:/usr/local/etc/redis" --env-file="$SERVICE_ROOT/ENV" -d --restart always --label dokku=service --label dokku.service=redis "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION")
     echo "$ID" > "$SERVICE_ROOT/ID"
 
     dokku_log_verbose_quiet "Waiting for container to be ready"
