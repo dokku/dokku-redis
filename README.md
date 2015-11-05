@@ -24,7 +24,7 @@ dokku plugin:install https://github.com/dokku/dokku-redis.git redis
 ```
 redis:clone <name> <new-name>  Create container <new-name> then copy data from <name> into <new-name>
 redis:connect <name>           Connect via redis-cli to a redis service
-redis:create <name>            Create a redis service
+redis:create <name>            Create a redis service with environment variables
 redis:destroy <name>           Delete the service and stop its container if there are no links left
 redis:export <name> > <file>   Export a dump of the redis service database
 redis:expose <name> [port]     Expose a redis service on custom port if provided (random port otherwise)
@@ -53,6 +53,13 @@ dokku redis:create lolipop
 # official redis image
 export REDIS_IMAGE="redis"
 export REDIS_IMAGE_VERSION="2.8.21"
+
+# you can also specify custom environment
+# variables to start the redis service
+# in semi-colon separated forma
+export REDIS_CUSTOM_ENV="USER=alpha;HOST=beta"
+
+# create a redis service
 dokku redis:create lolipop
 
 # get connection information as follows
