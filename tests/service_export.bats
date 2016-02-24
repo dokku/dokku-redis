@@ -21,9 +21,18 @@ teardown() {
   assert_contains "${lines[*]}" "service not_existing_service does not exist"
 }
 
-@test "($PLUGIN_COMMAND_PREFIX:export) success" {
+@test "($PLUGIN_COMMAND_PREFIX:export) success with SSH TTY" {
   export ECHO_DOCKER_COMMAND="true"
+  export SSH_TTY=`tty`
   run dokku "$PLUGIN_COMMAND_PREFIX:export" l
+  assert_exit_status 0
   assert_output "docker exec dokku.redis.l cat /data/dump.rdb"
 }
 
+@test "($PLUGIN_COMMAND_PREFIX:export) success without SSH TTY" {
+  export ECHO_DOCKER_COMMAND="true"
+  unset SSH_TTY
+  run dokku "$PLUGIN_COMMAND_PREFIX:export" l
+  assert_exit_status 0
+  assert_output "docker exec dokku.redis.l cat /data/dump.rdb"
+}

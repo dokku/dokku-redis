@@ -117,7 +117,9 @@ case "$1" in
     [[ -n $SSH_TTY ]] && stty -opost
     docker exec "$SERVICE_NAME" bash -c "echo SAVE | redis-cli" > /dev/null 2>&1
     docker exec "$SERVICE_NAME" cat /data/dump.rdb
+    status=$?
     [[ -n $SSH_TTY ]] && stty opost
+    exit $status
     ;;
 
   $PLUGIN_COMMAND_PREFIX:import)
