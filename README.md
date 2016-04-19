@@ -129,3 +129,30 @@ dokku redis:clone lolipop new_database
 # finally, you can destroy the container
 dokku redis:destroy lolipop
 ```
+
+## Changing database adapter
+
+It's possible to change the protocol for REDIS_URL by setting
+the environment variable REDIS_DATABASE_SCHEME on the app:
+
+```
+dokku config:set playground REDIS_DATABASE_SCHEME=redis2
+dokku redis:link lolipop playground
+```
+
+Will cause REDIS_URL to be set as
+redis2://dokku-redis-lolipop:6379/lolipop
+
+CAUTION: Changing REDIS_DATABASE_SCHEME after linking will cause dokku to
+believe the redis is not linked when attempting to use `dokku redis:unlink`
+or `dokku redis:promote`.
+You should be able to fix this by
+
+- Changing REDIS_URL manually to the new value.
+
+OR
+
+- Set REDIS_DATABASE_SCHEME back to its original setting
+- Unlink the service
+- Change REDIS_DATABASE_SCHEME to the desired setting
+- Relink the service

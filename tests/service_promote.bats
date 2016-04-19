@@ -51,3 +51,10 @@ teardown() {
   run dokku config my_app
   assert_contains "${lines[*]}" "DOKKU_REDIS_"
 }
+
+@test "($PLUGIN_COMMAND_PREFIX:promote) uses REDIS_DATABASE_SCHEME variable" {
+  dokku config:set my_app "REDIS_DATABASE_SCHEME=redis2" "REDIS_URL=redis://u:p@host:6379" "DOKKU_REDIS_BLUE_URL=redis2://dokku-redis-l:6379/0"
+  dokku "$PLUGIN_COMMAND_PREFIX:promote" l my_app
+  url=$(dokku config:get my_app REDIS_URL)
+  assert_equal "$url" "redis2://dokku-redis-l:6379/0"
+}
