@@ -58,3 +58,11 @@ teardown() {
   assert_contains "${lines[*]}" "--link dokku.redis.l:dokku-redis-l"
   dokku "$PLUGIN_COMMAND_PREFIX:unlink" l my_app
 }
+
+@test "($PLUGIN_COMMAND_PREFIX:link) uses apps REDIS_DATABASE_SCHEME variable" {
+  dokku config:set my_app REDIS_DATABASE_SCHEME=redis2
+  dokku "$PLUGIN_COMMAND_PREFIX:link" l my_app
+  url=$(dokku config:get my_app REDIS_URL)
+  assert_contains "$url" "redis2://dokku-redis-l:6379/0"
+  dokku "$PLUGIN_COMMAND_PREFIX:unlink" l my_app
+}
