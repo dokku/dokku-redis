@@ -377,6 +377,6 @@ service_linked_apps() {
 
 update_plugin_scheme_for_app() {
   local APP=$1
-  local REDIS_DATABASE_SCHEME=$(config_get $APP REDIS_DATABASE_SCHEME)
+  local REDIS_DATABASE_SCHEME=$(config_get "$APP" REDIS_DATABASE_SCHEME)
   PLUGIN_SCHEME=${REDIS_DATABASE_SCHEME:-$PLUGIN_SCHEME}
 }
