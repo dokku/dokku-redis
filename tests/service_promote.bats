@@ -39,22 +39,22 @@ teardown() {
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:promote) changes REDIS_URL" {
-  dokku config:set my_app "REDIS_URL=redis://host:6379/db" "DOKKU_REDIS_BLUE_URL=redis://dokku-redis-l:6379/0"
+  dokku config:set my_app "REDIS_URL=redis://host:6379/db" "DOKKU_REDIS_BLUE_URL=redis://dokku-redis-l:6379"
   dokku "$PLUGIN_COMMAND_PREFIX:promote" l my_app
   url=$(dokku config:get my_app REDIS_URL)
-  assert_equal "$url" "redis://dokku-redis-l:6379/0"
+  assert_equal "$url" "redis://dokku-redis-l:6379"
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:promote) creates new config url when needed" {
-  dokku config:set my_app "REDIS_URL=redis://host:6379/db" "DOKKU_REDIS_BLUE_URL=redis://dokku-redis-l:6379/0"
+  dokku config:set my_app "REDIS_URL=redis://host:6379/db" "DOKKU_REDIS_BLUE_URL=redis://dokku-redis-l:6379"
   dokku "$PLUGIN_COMMAND_PREFIX:promote" l my_app
   run dokku config my_app
   assert_contains "${lines[*]}" "DOKKU_REDIS_"
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:promote) uses REDIS_DATABASE_SCHEME variable" {
-  dokku config:set my_app "REDIS_DATABASE_SCHEME=redis2" "REDIS_URL=redis://u:p@host:6379" "DOKKU_REDIS_BLUE_URL=redis2://dokku-redis-l:6379/0"
+  dokku config:set my_app "REDIS_DATABASE_SCHEME=redis2" "REDIS_URL=redis://u:p@host:6379" "DOKKU_REDIS_BLUE_URL=redis2://dokku-redis-l:6379"
   dokku "$PLUGIN_COMMAND_PREFIX:promote" l my_app
   url=$(dokku config:get my_app REDIS_URL)
-  assert_equal "$url" "redis2://dokku-redis-l:6379/0"
+  assert_equal "$url" "redis2://dokku-redis-l:6379"
 }

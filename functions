@@ -295,7 +295,7 @@ service_unlink() {
 service_url() {
   local SERVICE="$1"
   local SERVICE_ALIAS="$(service_alias "$SERVICE")"
-  echo "$PLUGIN_SCHEME://$SERVICE_ALIAS:${PLUGIN_DATASTORE_PORTS[0]}/0"
+  echo "$PLUGIN_SCHEME://$SERVICE_ALIAS:${PLUGIN_DATASTORE_PORTS[0]}"
 }
 
 is_container_status () {
