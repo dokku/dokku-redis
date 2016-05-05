@@ -1,7 +1,7 @@
 sudo: required
-dist: trusty
 language: bash
 env:
   - DOKKU_VERSION=master
+  - DOKKU_VERSION=33c6e56030ff79491d394fd6a8db915fb61305dd
 before_install: make setup
 script: make test
