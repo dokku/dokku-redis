@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/config"
 set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
-source "$(dirname "$0")/config"
 source "$PLUGIN_AVAILABLE_PATH/config/functions"
 
 get_random_ports() {
@@ -298,8 +298,8 @@ service_url() {
   echo "$PLUGIN_SCHEME://$SERVICE_ALIAS:${PLUGIN_DATASTORE_PORTS[0]}"
 }
 
-is_container_status () {
-  local CID=$1
+is_container_status() {
+  local CID="$1"
   local TEMPLATE="{{.State.$2}}"
   local CONTAINER_STATUS=$(docker inspect -f "$TEMPLATE" "$CID" || true)
 
@@ -376,7 +376,7 @@ service_linked_apps() {
 }
 
 update_plugin_scheme_for_app() {
-  local APP=$1
-  local REDIS_DATABASE_SCHEME=$(config_get $APP REDIS_DATABASE_SCHEME)
+  local APP="$1"
+  local REDIS_DATABASE_SCHEME=$(config_get "$APP" REDIS_DATABASE_SCHEME)
   PLUGIN_SCHEME=${REDIS_DATABASE_SCHEME:-$PLUGIN_SCHEME}
 }
