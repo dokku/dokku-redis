@@ -46,7 +46,7 @@ case "$1" in
     [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
     verify_service_name "$2"
     SERVICE="$2"; SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"; LINKS_FILE="$SERVICE_ROOT/LINKS"
-    SERVICE_NAME=$(get_service_name "$SERVICE")
+    SERVICE_NAME="$(get_service_name "$SERVICE")"
 
     [[ -s "$LINKS_FILE" ]] && dokku_log_fail "Cannot delete linked service"
 
@@ -102,7 +102,7 @@ case "$1" in
     [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
     verify_service_name "$2"
     SERVICE="$2"; SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-    SERVICE_NAME=$(get_service_name "$SERVICE")
+    SERVICE_NAME="$(get_service_name "$SERVICE")"
 
     [[ -n $SSH_TTY ]] && stty -opost
     docker exec "$SERVICE_NAME" bash -c "echo SAVE | redis-cli" > /dev/null 2>&1
@@ -116,7 +116,7 @@ case "$1" in
     [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
     verify_service_name "$2"
     SERVICE="$2"; SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-    SERVICE_NAME=$(get_service_name "$SERVICE")
+    SERVICE_NAME="$(get_service_name "$SERVICE")"
 
     if [[ -t 0 ]]; then
       dokku_log_fail "No data provided on stdin."
@@ -156,7 +156,7 @@ case "$1" in
     [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
     verify_service_name "$2"
     SERVICE="$2"; SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-    SERVICE_NAME=$(get_service_name "$SERVICE")
+    SERVICE_NAME="$(get_service_name "$SERVICE")"
     has_tty && SERVICE_TTY_OPTS="-t"
 
     docker exec -i $SERVICE_TTY_OPTS "$SERVICE_NAME" redis-cli
