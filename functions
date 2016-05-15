@@ -263,7 +263,7 @@ service_create_container() {
   docker run --rm --link "$SERVICE_NAME:$PLUGIN_COMMAND_PREFIX" dokkupaas/wait > /dev/null
 
   dokku_log_info2 "$PLUGIN_SERVICE container created: $SERVICE"
-  dokku "$PLUGIN_COMMAND_PREFIX:info" "$SERVICE"
+  service_info "$SERVICE"
 }
 
 service_stop() {
