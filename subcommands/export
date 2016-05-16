@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/config"
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+source "$PLUGIN_BASE_PATH/common/functions"
+source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/functions"
+
+redis-export-cmd() {
+  [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
+  verify_service_name "$2"
+  SERVICE="$2"; SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
+  SERVICE_NAME="$(get_service_name "$SERVICE")"
+
+  [[ -n $SSH_TTY ]] && stty -opost
+  docker exec "$SERVICE_NAME" bash -c "echo SAVE | redis-cli" > /dev/null 2>&1
+  docker exec "$SERVICE_NAME" cat /data/dump.rdb
+  status=$?
+  [[ -n $SSH_TTY ]] && stty opost
+  exit $status
+}
+
+redis-export-cmd "$@"

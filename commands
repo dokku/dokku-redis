@@ -15,190 +15,74 @@ if [[ -d "$PLUGIN_DATA_ROOT/*" ]]; then
 fi
 
 case "$1" in
-  $PLUGIN_COMMAND_PREFIX:create)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    [[ ! -d "$PLUGIN_DATA_ROOT/$2" ]] || dokku_log_fail "$PLUGIN_SERVICE service $2 already exists"
-    SERVICE="$2"; SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"; LINKS_FILE="$SERVICE_ROOT/LINKS"
-
-    if ! docker images | grep -e "^$PLUGIN_IMAGE " | grep -q " $PLUGIN_IMAGE_VERSION " ; then
-      docker pull "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" || dokku_log_fail "$PLUGIN_SERVICE image $PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION pull failed"
-    fi
-
-    mkdir -p "$SERVICE_ROOT" || dokku_log_fail "Unable to create service directory"
-    mkdir -p "$SERVICE_ROOT/data" || dokku_log_fail "Unable to create service data directory"
-    mkdir -p "$SERVICE_ROOT/config" || dokku_log_fail "Unable to create service config directory"
-    curl "https://raw.githubusercontent.com/antirez/redis/${REDIS_IMAGE_VERSION:0:3}/redis.conf" > "$SERVICE_ROOT/config/redis.conf" || dokku_log_fail "Unable to download the default redis.conf to the config directory"
-    touch "$LINKS_FILE"
-
-    if [[ -n $REDIS_CUSTOM_ENV ]]; then
-      echo "$REDIS_CUSTOM_ENV" | tr ';' "\n" > "$SERVICE_ROOT/ENV"
-    else
-      echo "" > "$SERVICE_ROOT/ENV"
-    fi
-    service_create_container "$SERVICE"
-    ;;
-
-  $PLUGIN_COMMAND_PREFIX:destroy)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    verify_service_name "$2"
-    SERVICE="$2"; SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"; LINKS_FILE="$SERVICE_ROOT/LINKS"
-    SERVICE_NAME="$(get_service_name "$SERVICE")"
-
-    [[ -s "$LINKS_FILE" ]] && dokku_log_fail "Cannot delete linked service"
-
-    [[ "$3" == "force" ]] && DOKKU_APPS_FORCE_DELETE=1
-    if [[ -z "$DOKKU_APPS_FORCE_DELETE" ]]; then
-      dokku_log_warn "WARNING: Potentially Destructive Action"
-      dokku_log_warn "This command will destroy $SERVICE $PLUGIN_SERVICE service."
-      dokku_log_warn "To proceed, type \"$SERVICE\""
-      echo ""
-
-      read -rp "> " service_name
-      if [[ "$service_name" != "$SERVICE" ]]; then
-        dokku_log_warn "Confirmation did not match $SERVICE. Aborted."
-        exit 1
-      fi
-    fi
-
-    dokku_log_info1 "Deleting $SERVICE"
-    if [[ -n $(docker ps -aq -f name="$SERVICE_NAME") ]]; then
-      service_stop "$SERVICE"
-
-      dokku_log_verbose_quiet "Removing container"
-      docker rm -v "$SERVICE_NAME" > /dev/null
-      sleep 1
-    else
-      dokku_log_verbose_quiet "No container exists for $SERVICE"
-    fi
-
-    dokku_log_verbose_quiet "Removing data"
-    docker run --rm -v "$SERVICE_ROOT/data:/data" "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" chmod 777 -R /data
-    rm -rf "$SERVICE_ROOT"
-
-    dokku_log_info2 "$PLUGIN_SERVICE container deleted: $SERVICE"
-    ;;
-
-  $PLUGIN_COMMAND_PREFIX:link)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    [[ -z $3 ]] && dokku_log_fail "Please specify an app to run the command on"
-    verify_app_name "$3"
-    verify_service_name "$2"
-    service_link "$2" "$3"
-    ;;
-
-  $PLUGIN_COMMAND_PREFIX:unlink)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    [[ -z $3 ]] && dokku_log_fail "Please specify an app to run the command on"
-    verify_app_name "$3"
-    verify_service_name "$2"
-    service_unlink "$2" "$3"
-    ;;
-
-  $PLUGIN_COMMAND_PREFIX:export)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    verify_service_name "$2"
-    SERVICE="$2"; SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-    SERVICE_NAME="$(get_service_name "$SERVICE")"
-
-    [[ -n $SSH_TTY ]] && stty -opost
-    docker exec "$SERVICE_NAME" bash -c "echo SAVE | redis-cli" > /dev/null 2>&1
-    docker exec "$SERVICE_NAME" cat /data/dump.rdb
-    status=$?
-    [[ -n $SSH_TTY ]] && stty opost
-    exit $status
-    ;;
-
-  $PLUGIN_COMMAND_PREFIX:import)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    verify_service_name "$2"
-    SERVICE="$2"; SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-    SERVICE_NAME="$(get_service_name "$SERVICE")"
-
-    if [[ -t 0 ]]; then
-      dokku_log_fail "No data provided on stdin."
-    fi
-    dokku "$PLUGIN_COMMAND_PREFIX:stop" "$SERVICE" > /dev/null 2>&1
-    docker run --rm -i -v "$SERVICE_ROOT/data:/data" "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" bash -c "cat > /data/dump.rdb && chown redis: /data/dump.rdb"
-    dokku "$PLUGIN_COMMAND_PREFIX:start" "$SERVICE" > /dev/null 2>&1
-    ;;
-
-  $PLUGIN_COMMAND_PREFIX:logs)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    verify_service_name "$2"
-    service_logs "$2" "$3"
-    ;;
-
-  $PLUGIN_COMMAND_PREFIX:start)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    verify_service_name "$2"
-    service_start "$2"
-    ;;
-
-  $PLUGIN_COMMAND_PREFIX:stop)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    verify_service_name "$2"
-    service_stop "$2"
-    ;;
-
-  $PLUGIN_COMMAND_PREFIX:restart)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    verify_service_name "$2"
-    service_stop "$2"
-    service_start "$2"
-    dokku_log_info1 "Please call dokku ps:restart on all linked apps"
+  $PLUGIN_COMMAND_PREFIX:clone)
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/subcommands/clone" "$@"
     ;;
 
   $PLUGIN_COMMAND_PREFIX:connect)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    verify_service_name "$2"
-    SERVICE="$2"; SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-    SERVICE_NAME="$(get_service_name "$SERVICE")"
-    has_tty && SERVICE_TTY_OPTS="-t"
-
-    docker exec -i $SERVICE_TTY_OPTS "$SERVICE_NAME" redis-cli
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/subcommands/connect" "$@"
     ;;
 
-  $PLUGIN_COMMAND_PREFIX:info)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    verify_service_name "$2"
-    service_info "$2"
+  $PLUGIN_COMMAND_PREFIX:create)
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/subcommands/create" "$@"
     ;;
 
-  $PLUGIN_COMMAND_PREFIX:list)
-    service_list
+  $PLUGIN_COMMAND_PREFIX:destroy)
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/subcommands/destroy" "$@"
     ;;
 
-  $PLUGIN_COMMAND_PREFIX:clone)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    [[ -z $3 ]] && dokku_log_fail "Please specify a name for the new service"
-    verify_service_name "$2"
-    SERVICE="$2"
-    NEW_SERVICE="$3"
-    dokku "$PLUGIN_COMMAND_PREFIX:create" "$NEW_SERVICE"
-    dokku_log_info1 "Copying data from $SERVICE to $NEW_SERVICE"
-    dokku "$PLUGIN_COMMAND_PREFIX:export" "$SERVICE" | dokku "$PLUGIN_COMMAND_PREFIX:import" "$NEW_SERVICE" > /dev/null 2>&1 || true
-    dokku_log_info1 "Done"
+  $PLUGIN_COMMAND_PREFIX:export)
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/subcommands/export" "$@"
     ;;
 
   $PLUGIN_COMMAND_PREFIX:expose)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    verify_service_name "$2"
-    service_port_expose "$2" "${@:3}"
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/subcommands/expose" "$@"
     ;;
 
-  $PLUGIN_COMMAND_PREFIX:unexpose)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    verify_service_name "$2"
-    service_port_unexpose "$2"
+  $PLUGIN_COMMAND_PREFIX:import)
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/subcommands/import" "$@"
+    ;;
+
+  $PLUGIN_COMMAND_PREFIX:info)
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/subcommands/info" "$@"
+    ;;
+
+  $PLUGIN_COMMAND_PREFIX:link)
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/subcommands/link" "$@"
+    ;;
+
+  $PLUGIN_COMMAND_PREFIX:list)
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/subcommands/list" "$@"
+    ;;
+
+  $PLUGIN_COMMAND_PREFIX:logs)
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/subcommands/logs" "$@"
     ;;
 
   $PLUGIN_COMMAND_PREFIX:promote)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    [[ -z $3 ]] && dokku_log_fail "Please specify an app to run the command on"
-    verify_service_name "$2"
-    verify_app_name "$3"
-    promote "$2" "$3"
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/subcommands/promote" "$@"
     ;;
+
+  $PLUGIN_COMMAND_PREFIX:restart)
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/subcommands/restart" "$@"
+    ;;
+
+  $PLUGIN_COMMAND_PREFIX:start)
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/subcommands/start" "$@"
+    ;;
+
+  $PLUGIN_COMMAND_PREFIX:stop)
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/subcommands/stop" "$@"
+    ;;
+
+  $PLUGIN_COMMAND_PREFIX:unexpose)
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/subcommands/unexpose" "$@"
+    ;;
+
+  $PLUGIN_COMMAND_PREFIX:unlink)
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/subcommands/unlink" "$@"
+    ;;
+
 
   help | $PLUGIN_COMMAND_PREFIX:help)
     help_content_func() {
