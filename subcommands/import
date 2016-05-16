@@ -11,15 +11,7 @@ redis-import-cmd() {
 
   [[ -z "$SERVICE" ]] && dokku_log_fail "Please specify a name for the service"
   verify_service_name "$SERVICE"
-  SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  SERVICE_NAME="$(get_service_name "$SERVICE")"
-
-  if [[ -t 0 ]]; then
-    dokku_log_fail "No data provided on stdin."
-  fi
-  dokku "$PLUGIN_COMMAND_PREFIX:stop" "$SERVICE" > /dev/null 2>&1
-  docker run --rm -i -v "$SERVICE_ROOT/data:/data" "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" bash -c "cat > /data/dump.rdb && chown redis: /data/dump.rdb"
-  dokku "$PLUGIN_COMMAND_PREFIX:start" "$SERVICE" > /dev/null 2>&1
+  service_import "$SERVICE"
 }
 
 redis-import-cmd "$@"

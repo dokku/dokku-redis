@@ -38,11 +38,37 @@ service_alias() {
   echo "$SERVICE_NAME" | tr ._ -
 }
 
+service_export() {
+  local SERVICE="$1"
+  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
+  local SERVICE_NAME="$(get_service_name "$SERVICE")"
+
+  [[ -n $SSH_TTY ]] && stty -opost
+  docker exec "$SERVICE_NAME" bash -c "echo SAVE | redis-cli" > /dev/null 2>&1
+  docker exec "$SERVICE_NAME" cat /data/dump.rdb
+  status=$?
+  [[ -n $SSH_TTY ]] && stty opost
+  exit $status
+}
+
 service_info() {
   local SERVICE="$1"
   local SERVICE_URL=$(service_url "$SERVICE")
 
   echo "       DSN: $SERVICE_URL"
+}
+
+service_import() {
+  local SERVICE="$1"
+  SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
+  SERVICE_NAME="$(get_service_name "$SERVICE")"
+
+  if [[ -t 0 ]]; then
+    dokku_log_fail "No data provided on stdin."
+  fi
+  dokku "$PLUGIN_COMMAND_PREFIX:stop" "$SERVICE" > /dev/null 2>&1
+  docker run --rm -i -v "$SERVICE_ROOT/data:/data" "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" bash -c "cat > /data/dump.rdb && chown redis: /data/dump.rdb"
+  dokku "$PLUGIN_COMMAND_PREFIX:start" "$SERVICE" > /dev/null 2>&1
 }
 
 service_list() {
@@ -249,6 +275,30 @@ service_start() {
   else
     dokku_log_verbose_quiet "Neither container nor valid configuration exists for $SERVICE"
   fi
+}
+
+service_create() {
+  local SERVICE="$1"
+  [[ -z "$SERVICE" ]] && dokku_log_fail "Please specify a name for the service"
+  [[ ! -d "$PLUGIN_DATA_ROOT/$SERVICE" ]] || dokku_log_fail "$PLUGIN_SERVICE service $SERVICE already exists"
+  SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"; LINKS_FILE="$SERVICE_ROOT/LINKS"
+
+  if ! docker images | grep -e "^$PLUGIN_IMAGE " | grep -q " $PLUGIN_IMAGE_VERSION " ; then
+    docker pull "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" || dokku_log_fail "$PLUGIN_SERVICE image $PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION pull failed"
+  fi
+
+  mkdir -p "$SERVICE_ROOT" || dokku_log_fail "Unable to create service directory"
+  mkdir -p "$SERVICE_ROOT/data" || dokku_log_fail "Unable to create service data directory"
+  mkdir -p "$SERVICE_ROOT/config" || dokku_log_fail "Unable to create service config directory"
+  curl "https://raw.githubusercontent.com/antirez/redis/${REDIS_IMAGE_VERSION:0:3}/redis.conf" > "$SERVICE_ROOT/config/redis.conf" || dokku_log_fail "Unable to download the default redis.conf to the config directory"
+  touch "$LINKS_FILE"
+
+  if [[ -n $REDIS_CUSTOM_ENV ]]; then
+    echo "$REDIS_CUSTOM_ENV" | tr ';' "\n" > "$SERVICE_ROOT/ENV"
+  else
+    echo "" > "$SERVICE_ROOT/ENV"
+  fi
+  service_create_container "$SERVICE"
 }
 
 service_create_container() {

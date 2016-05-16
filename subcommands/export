@@ -11,15 +11,7 @@ redis-export-cmd() {
 
   [[ -z "$SERVICE" ]] && dokku_log_fail "Please specify a name for the service"
   verify_service_name "$SERVICE"
-  SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  SERVICE_NAME="$(get_service_name "$SERVICE")"
-
-  [[ -n $SSH_TTY ]] && stty -opost
-  docker exec "$SERVICE_NAME" bash -c "echo SAVE | redis-cli" > /dev/null 2>&1
-  docker exec "$SERVICE_NAME" cat /data/dump.rdb
-  status=$?
-  [[ -n $SSH_TTY ]] && stty opost
-  exit $status
+  service_export "$SERVICE"
 }
 
 redis-export-cmd "$@"
