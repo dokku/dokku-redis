@@ -28,7 +28,7 @@ teardown() {
 
 @test "($PLUGIN_COMMAND_PREFIX:unlink) error when the service does not exist" {
   run dokku "$PLUGIN_COMMAND_PREFIX:unlink" not_existing_service my_app
-  assert_contains "${lines[*]}" "Redis service not_existing_service does not exist"
+  assert_contains "${lines[*]}" "service not_existing_service does not exist"
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:unlink) error when service not linked to app" {
@@ -39,8 +39,11 @@ teardown() {
 @test "($PLUGIN_COMMAND_PREFIX:unlink) removes link from docker-options" {
   dokku "$PLUGIN_COMMAND_PREFIX:link" l my_app >&2
   dokku "$PLUGIN_COMMAND_PREFIX:unlink" l my_app
-  options=$(dokku docker-options my_app)
-  assert_equal "$options" ""
+  options=$(dokku docker-options my_app | xargs)
+  check_value=""
+  [[ "$(dokku version)" == "master" ]] && check_value="Deploy options: --restart=on-failure:10"
+  [[ "$(at-least-version 0.7.0 "$(dokku version)")" == "true" ]] && check_value="Deploy options: --restart=on-failure:10"
+  assert_equal "$options" "$check_value"
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:unlink) unsets config url from app" {

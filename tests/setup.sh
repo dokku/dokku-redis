@@ -17,6 +17,7 @@ rm -rf $DOKKU_ROOT/plugins/$PLUGIN_COMMAND_PREFIX
 mkdir -p $DOKKU_ROOT/plugins/$PLUGIN_COMMAND_PREFIX $DOKKU_ROOT/plugins/$PLUGIN_COMMAND_PREFIX/subcommands
 find ./ -maxdepth 1 -type f -exec cp '{}' $DOKKU_ROOT/plugins/$PLUGIN_COMMAND_PREFIX \;
 find ./subcommands -maxdepth 1 -type f -exec cp '{}' $DOKKU_ROOT/plugins/$PLUGIN_COMMAND_PREFIX/subcommands \;
+echo "$DOKKU_VERSION" > $DOKKU_ROOT/VERSION
 
 if [[ ! -f $BIN_STUBS/plugn ]]; then
   wget -O- "$PLUGN_URL" | tar xzf - -C "$BIN_STUBS"
