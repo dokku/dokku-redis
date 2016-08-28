@@ -18,7 +18,7 @@ teardown() {
 
 @test "($PLUGIN_COMMAND_PREFIX:logs) error when service does not exist" {
   run dokku "$PLUGIN_COMMAND_PREFIX:logs" not_existing_service
-  assert_contains "${lines[*]}" "Redis service not_existing_service does not exist"
+  assert_contains "${lines[*]}" "service not_existing_service does not exist"
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:logs) success when not tailing" {

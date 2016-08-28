@@ -14,7 +14,7 @@ load test_helper
 
 @test "($PLUGIN_COMMAND_PREFIX:destroy) error when container does not exist" {
   run dokku "$PLUGIN_COMMAND_PREFIX:destroy" non_existing_container
-  assert_contains "${lines[*]}" "Redis service non_existing_container does not exist"
+  assert_contains "${lines[*]}" "service non_existing_container does not exist"
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:destroy) error when container is linked to an app" {
