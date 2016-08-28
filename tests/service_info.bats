@@ -21,12 +21,43 @@ teardown() {
 
 @test "($PLUGIN_COMMAND_PREFIX:info) success" {
   run dokku "$PLUGIN_COMMAND_PREFIX:info" l
-  assert_contains "${lines[*]}" "DSN: redis://dokku-redis-l:6379"
+  assert_contains "${lines[*]}" "redis://dokku-redis-l:6379"
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:info) replaces underscores by dash in hostname" {
   dokku "$PLUGIN_COMMAND_PREFIX:create" test_with_underscores
   run dokku "$PLUGIN_COMMAND_PREFIX:info" test_with_underscores
-  assert_contains "${lines[*]}" "DSN: redis://dokku-redis-test-with-underscores:6379"
+  assert_contains "${lines[*]}" "redis://dokku-redis-test-with-underscores:6379"
   dokku --force "$PLUGIN_COMMAND_PREFIX:destroy" test_with_underscores
+}
+
+@test "($PLUGIN_COMMAND_PREFIX:info) success with flag" {
+  run dokku "$PLUGIN_COMMAND_PREFIX:info" l --dsn
+  assert_output "redis://dokku-redis-l:6379"
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:info" l --config-dir
+  assert_success
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:info" l --data-dir
+  assert_success
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:info" l --dsn
+  assert_success
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:info" l --exposed-ports
+  assert_success
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:info" l --links
+  assert_success
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:info" l --status
+  assert_success
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:info" l --version
+  assert_success
+}
+
+@test "($PLUGIN_COMMAND_PREFIX:info) error when invalid flag" {
+  run dokku "$PLUGIN_COMMAND_PREFIX:info" l --invalid-flag
+  assert_failure
 }

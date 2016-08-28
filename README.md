@@ -48,17 +48,25 @@ dokku redis:create lolipop
 # official redis image
 export REDIS_IMAGE="redis"
 export REDIS_IMAGE_VERSION="2.8.21"
+dokku redis:create lolipop
 
 # you can also specify custom environment
 # variables to start the redis service
 # in semi-colon separated forma
 export REDIS_CUSTOM_ENV="USER=alpha;HOST=beta"
-
-# create a redis service
 dokku redis:create lolipop
 
 # get connection information as follows
 dokku redis:info lolipop
+
+# you can also retrieve a specific piece of service info via flags
+dokku redis:info lolipop --config-dir
+dokku redis:info lolipop --data-dir
+dokku redis:info lolipop --dsn
+dokku redis:info lolipop --exposed-ports
+dokku redis:info lolipop --links
+dokku redis:info lolipop --status
+dokku redis:info lolipop --version
 
 # a redis service can be linked to a
 # container this will use native docker
