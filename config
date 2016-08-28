@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 export REDIS_IMAGE=${REDIS_IMAGE:="redis"}
-export REDIS_IMAGE_VERSION=${REDIS_IMAGE_VERSION:="3.0.7"}
+export REDIS_IMAGE_VERSION=${REDIS_IMAGE_VERSION:="3.2.3"}
 export REDIS_ROOT=${REDIS_ROOT:="/var/lib/dokku/services/redis"}
 
 export PLUGIN_COMMAND_PREFIX="redis"
