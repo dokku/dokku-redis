@@ -40,7 +40,8 @@ teardown() {
 @test "($PLUGIN_COMMAND_PREFIX:link) exports REDIS_URL to app" {
   dokku "$PLUGIN_COMMAND_PREFIX:link" l my_app
   url=$(dokku config:get my_app REDIS_URL)
-  assert_contains "$url" "redis://dokku-redis-l:6379"
+  password="$(cat "$PLUGIN_DATA_ROOT/l/PASSWORD")"
+  assert_contains "$url" "redis://l:$password@dokku-redis-l:6379"
   dokku "$PLUGIN_COMMAND_PREFIX:unlink" l my_app
 }
 
@@ -63,6 +64,7 @@ teardown() {
   dokku config:set my_app REDIS_DATABASE_SCHEME=redis2
   dokku "$PLUGIN_COMMAND_PREFIX:link" l my_app
   url=$(dokku config:get my_app REDIS_URL)
-  assert_contains "$url" "redis2://dokku-redis-l:6379"
+  password="$(cat "$PLUGIN_DATA_ROOT/l/PASSWORD")"
+  assert_contains "$url" "redis2://l:$password@dokku-redis-l:6379"
   dokku "$PLUGIN_COMMAND_PREFIX:unlink" l my_app
 }
