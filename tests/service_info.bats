@@ -50,6 +50,9 @@ teardown() {
   run dokku "$PLUGIN_COMMAND_PREFIX:info" l --id
   assert_success
 
+  run dokku "$PLUGIN_COMMAND_PREFIX:info" l --internal-ip
+  assert_success
+
   run dokku "$PLUGIN_COMMAND_PREFIX:info" l --links
   assert_success
 
