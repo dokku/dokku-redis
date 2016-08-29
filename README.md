@@ -67,6 +67,7 @@ dokku redis:info lolipop --exposed-ports
 dokku redis:info lolipop --id
 dokku redis:info lolipop --internal-ip
 dokku redis:info lolipop --links
+dokku redis:info lolipop --service-root
 dokku redis:info lolipop --status
 dokku redis:info lolipop --version
 
