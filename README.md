@@ -99,7 +99,7 @@ dokku redis:link lolipop playground
 #
 # and the following will be set on the linked application by default
 #
-#   REDIS_URL=redis://dokku-redis-lolipop:6379
+#   REDIS_URL=redis://lolipop:SOME_PASSWORD@dokku-redis-lolipop:6379
 #
 # NOTE: the host exposed here only works internally in docker containers. If
 # you want your container to be reachable from outside, you should use `expose`.
@@ -110,7 +110,7 @@ dokku redis:link other_service playground
 # since REDIS_URL is already in use, another environment variable will be
 # generated automatically
 #
-#   DOKKU_REDIS_BLUE_URL=redis://dokku-redis-other-service:6379
+#   DOKKU_REDIS_BLUE_URL=redis://other_service:ANOTHER_PASSWORD@dokku-redis-other-service:6379
 
 # you can then promote the new service to be the primary one
 # NOTE: this will restart your app
@@ -120,9 +120,9 @@ dokku redis:promote other_service playground
 # another environment variable to hold the previous value if necessary.
 # you could end up with the following for example:
 #
-#   REDIS_URL=redis://dokku-redis-other-service:63790
-#   DOKKU_REDIS_BLUE_URL=redis://dokku-redis-other-service:6379
-#   DOKKU_REDIS_SILVER_URL=redis://dokku-redis-lolipop:6379/lolipop
+#   REDIS_URL=redis://other_service:ANOTHER_PASSWORD@dokku-redis-other-service:63790
+#   DOKKU_REDIS_BLUE_URL=redis://other_service:ANOTHER_PASSWORD@dokku-redis-other-service:6379
+#   DOKKU_REDIS_SILVER_URL=redis://lolipop:SOME_PASSWORD@dokku-redis-lolipop:6379/lolipop
 
 # you can also unlink a redis service
 # NOTE: this will restart your app and unset related environment variables
@@ -156,7 +156,7 @@ dokku redis:link lolipop playground
 ```
 
 Will cause REDIS_URL to be set as
-redis2://dokku-redis-lolipop:6379/lolipop
+redis2://lolipop:SOME_PASSWORD@dokku-redis-lolipop:6379/lolipop
 
 CAUTION: Changing REDIS_DATABASE_SCHEME after linking will cause dokku to
 believe the redis is not linked when attempting to use `dokku redis:unlink`

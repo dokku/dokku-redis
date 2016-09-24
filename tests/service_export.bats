@@ -25,6 +25,7 @@ teardown() {
   export ECHO_DOCKER_COMMAND="true"
   export SSH_TTY=`tty`
   run dokku "$PLUGIN_COMMAND_PREFIX:export" l
+  password="$(cat "$PLUGIN_DATA_ROOT/l/PASSWORD")"
   assert_exit_status 0
   assert_output "docker exec dokku.redis.l cat /data/dump.rdb"
 }
@@ -33,6 +34,7 @@ teardown() {
   export ECHO_DOCKER_COMMAND="true"
   unset SSH_TTY
   run dokku "$PLUGIN_COMMAND_PREFIX:export" l
+  password="$(cat "$PLUGIN_DATA_ROOT/l/PASSWORD")"
   assert_exit_status 0
   assert_output "docker exec dokku.redis.l cat /data/dump.rdb"
 }

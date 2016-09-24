@@ -21,19 +21,22 @@ teardown() {
 
 @test "($PLUGIN_COMMAND_PREFIX:info) success" {
   run dokku "$PLUGIN_COMMAND_PREFIX:info" l
-  assert_contains "${lines[*]}" "redis://dokku-redis-l:6379"
+  password="$(cat "$PLUGIN_DATA_ROOT/l/PASSWORD")"
+  assert_contains "${lines[*]}" "redis://l:$password@dokku-redis-l:6379"
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:info) replaces underscores by dash in hostname" {
   dokku "$PLUGIN_COMMAND_PREFIX:create" test_with_underscores
   run dokku "$PLUGIN_COMMAND_PREFIX:info" test_with_underscores
-  assert_contains "${lines[*]}" "redis://dokku-redis-test-with-underscores:6379"
+  password="$(cat "$PLUGIN_DATA_ROOT/test_with_underscores/PASSWORD")"
+  assert_contains "${lines[*]}" "redis://test_with_underscores:$password@dokku-redis-test-with-underscores:6379"
   dokku --force "$PLUGIN_COMMAND_PREFIX:destroy" test_with_underscores
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:info) success with flag" {
   run dokku "$PLUGIN_COMMAND_PREFIX:info" l --dsn
-  assert_output "redis://dokku-redis-l:6379"
+  password="$(cat "$PLUGIN_DATA_ROOT/l/PASSWORD")"
+  assert_output "redis://l:$password@dokku-redis-l:6379"
 
   run dokku "$PLUGIN_COMMAND_PREFIX:info" l --config-dir
   assert_success
