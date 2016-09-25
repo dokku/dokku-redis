@@ -22,7 +22,7 @@ service_create() {
   mkdir -p "$SERVICE_ROOT" || dokku_log_fail "Unable to create service directory"
   mkdir -p "$SERVICE_ROOT/data" || dokku_log_fail "Unable to create service data directory"
   mkdir -p "$SERVICE_ROOT/config" || dokku_log_fail "Unable to create service config directory"
-  curl -sSL "https://raw.githubusercontent.com/antirez/redis/${REDIS_IMAGE_VERSION:0:3}/redis.conf" > "$SERVICE_ROOT/config/redis.conf" || dokku_log_fail "Unable to download the default redis.conf to the config directory"
+  curl -sSL "https://raw.githubusercontent.com/antirez/redis/${PLUGIN_IMAGE_VERSION:0:3}/redis.conf" > "$SERVICE_ROOT/config/redis.conf" || dokku_log_fail "Unable to download the default redis.conf to the config directory"
   PASSWORD=$(openssl rand -hex 32)
   echo "$PASSWORD" > "$SERVICE_ROOT/PASSWORD"
   chmod 640 "$SERVICE_ROOT/PASSWORD"
