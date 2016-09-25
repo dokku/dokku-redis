@@ -15,6 +15,8 @@ service_create() {
   [[ ! -d "$PLUGIN_DATA_ROOT/$SERVICE" ]] || dokku_log_fail "$PLUGIN_SERVICE service $SERVICE already exists"
   SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"; LINKS_FILE="$SERVICE_ROOT/LINKS"
 
+  service_parse_args "${@:2}"
+
   if ! docker images | grep -e "^$PLUGIN_IMAGE " | grep -q " $PLUGIN_IMAGE_VERSION " ; then
     docker pull "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" || dokku_log_fail "$PLUGIN_SERVICE image $PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION pull failed"
   fi
@@ -24,11 +26,13 @@ service_create() {
   mkdir -p "$SERVICE_ROOT/config" || dokku_log_fail "Unable to create service config directory"
   curl -sSL "https://raw.githubusercontent.com/antirez/redis/${PLUGIN_IMAGE_VERSION:0:3}/redis.conf" > "$SERVICE_ROOT/config/redis.conf" || dokku_log_fail "Unable to download the default redis.conf to the config directory"
   PASSWORD=$(openssl rand -hex 32)
+  [[ -n "$SERVICE_PASSWORD" ]] && PASSWORD="$SERVICE_PASSWORD"
   echo "$PASSWORD" > "$SERVICE_ROOT/PASSWORD"
   chmod 640 "$SERVICE_ROOT/PASSWORD"
   sed -i.bak "s/# requirepass.*/requirepass ${PASSWORD}/" "$SERVICE_ROOT/config/redis.conf" && rm "$SERVICE_ROOT/config/redis.conf.bak"
   touch "$LINKS_FILE"
 
+  [[ -n "$SERVICE_CUSTOM_ENV" ]] && REDIS_CUSTOM_ENV="$SERVICE_CUSTOM_ENV"
   if [[ -n $REDIS_CUSTOM_ENV ]]; then
     echo "$REDIS_CUSTOM_ENV" | tr ';' "\n" > "$SERVICE_ROOT/ENV"
   else
