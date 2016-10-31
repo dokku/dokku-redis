@@ -17,6 +17,11 @@ sudo dokku plugin:install https://github.com/dokku/dokku-redis.git redis
 ## commands
 
 ```
+redis:backup <name> <bucket>   Create a backup of the redis service to an existing s3 bucket
+redis:backup-auth <name> <aws_access_key_id> <aws_secret_access_key> Sets up authentication for backups on the redis service
+redis:backup-deauth <name>     Removes backup authentication for the redis service
+redis:backup-schedule <name> <schedule>  <aws_access_key_id> <aws_secret_access_key> <bucket> Schedules a backup of the redis service
+redis:backup-unschedule <name> Unschedules the backup of the redis service
 redis:clone <name> <new-name>  Create container <new-name> then copy data from <name> into <new-name>
 redis:connect <name>           Connect via redis-cli to a redis service
 redis:create <name>            Create a redis service with environment variables
@@ -171,3 +176,24 @@ OR
 - Unlink the service
 - Change REDIS_DATABASE_SCHEME to the desired setting
 - Relink the service
+
+## Backups
+
+Backups can be performed using the backup commands:
+
+```
+# setup s3 backup authentication
+dokku redis:backup-auth lolipop AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
+
+# remove s3 authentication
+dokku redis:backup-deauth lolipop
+
+# backup the `lolipop` service to the `BUCKET_NAME` bucket on AWS
+dokku redis:backup lolipop BUCKET_NAME
+
+# schedule a backup
+dokku redis:backup-schedule lolipop CRON_SCHEDULE BUCKET_NAME
+
+# remove the scheduled backup from cron
+dokku redis:backup-unschedule lolipop
+```
