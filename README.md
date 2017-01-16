@@ -125,7 +125,7 @@ dokku redis:promote other_service playground
 # another environment variable to hold the previous value if necessary.
 # you could end up with the following for example:
 #
-#   REDIS_URL=redis://other_service:ANOTHER_PASSWORD@dokku-redis-other-service:63790
+#   REDIS_URL=redis://other_service:ANOTHER_PASSWORD@dokku-redis-other-service:6379
 #   DOKKU_REDIS_BLUE_URL=redis://other_service:ANOTHER_PASSWORD@dokku-redis-other-service:6379
 #   DOKKU_REDIS_SILVER_URL=redis://lolipop:SOME_PASSWORD@dokku-redis-lolipop:6379/lolipop
 
