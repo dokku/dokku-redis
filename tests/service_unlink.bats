@@ -52,3 +52,22 @@ teardown() {
   config=$(dokku config:get my_app REDIS_URL || true)
   assert_equal "$config" ""
 }
+
+@test "($PLUGIN_COMMAND_PREFIX:unlink) link/unlink/link/promote/unlink test" {
+  dokku "$PLUGIN_COMMAND_PREFIX:link" l my_app >&2
+  dokku "$PLUGIN_COMMAND_PREFIX:unlink" l my_app
+  config=$(dokku config:get my_app REDIS_URL)
+  assert_equal "$config" ""
+
+  dokku "$PLUGIN_COMMAND_PREFIX:link" l my_app >&2
+  config=$(dokku config:get my_app REDIS_URL)
+  assert_contains "$config" "redis2://dokku-redis-l:6379"
+
+  dokku "$PLUGIN_COMMAND_PREFIX:promote" l my_app
+  config=$(dokku config:get my_app REDIS_URL)
+  assert_equal "$config" "redis://dokku-redis-l:6379"
+
+  dokku "$PLUGIN_COMMAND_PREFIX:unlink" l my_app
+  url=$(dokku config:get my_app REDIS_URL)
+  assert_equal "$config" ""
+}
