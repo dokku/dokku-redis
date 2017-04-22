@@ -104,10 +104,17 @@ service_start() {
   fi
 }
 
+
+service_password() {
+    local SERVICE="$1"
+    local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
+    local PASSWORD="$(cat "$SERVICE_ROOT/PASSWORD")"
+    echo "$PASSWORD"
+}
+
 service_url() {
   local SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local PASSWORD="$(cat "$SERVICE_ROOT/PASSWORD")"
+  local PASSWORD="$(service_password "$SERVICE")"
   local SERVICE_ALIAS="$(service_alias "$SERVICE")"
   echo "$PLUGIN_SCHEME://$SERVICE:$PASSWORD@$SERVICE_ALIAS:${PLUGIN_DATASTORE_PORTS[0]}"
 }
