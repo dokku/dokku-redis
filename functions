@@ -56,9 +56,10 @@ service_export() {
   local SERVICE="$1"
   local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
   local SERVICE_NAME="$(get_service_name "$SERVICE")"
+  local PASSWORD="$(service_password "$SERVICE")"
 
   [[ -n $SSH_TTY ]] && stty -opost
-  docker exec "$SERVICE_NAME" bash -c "echo SAVE | redis-cli" > /dev/null 2>&1
+  docker exec "$SERVICE_NAME" bash -c "echo SAVE | redis-cli -a ${PASSWORD}" > /dev/null 2>&1
   docker exec "$SERVICE_NAME" cat /data/dump.rdb
   status=$?
   [[ -n $SSH_TTY ]] && stty opost
@@ -103,7 +104,6 @@ service_start() {
     dokku_log_verbose_quiet "Neither container nor valid configuration exists for $SERVICE"
   fi
 }
-
 
 service_password() {
     local SERVICE="$1"
