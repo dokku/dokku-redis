@@ -17,7 +17,7 @@ sudo dokku plugin:install https://github.com/dokku/dokku-redis.git redis
 ## commands
 
 ```
-redis:backup <name> <bucket>   Create a backup of the redis service to an existing s3 bucket
+redis:backup <name> <bucket> [--use-iam] Create a backup of the redis service to an existing s3 bucket
 redis:backup-auth <name> <aws_access_key_id> <aws_secret_access_key> (<aws_default_region>) (<aws_signature_version>) (<endpoint_url>) Sets up authentication for backups on the redis service
 redis:backup-deauth <name>     Removes backup authentication for the redis service
 redis:backup-schedule <name> <schedule> <bucket> Schedules a backup of the redis service
@@ -58,7 +58,7 @@ dokku redis:create lolipop
 
 # you can also specify custom environment
 # variables to start the redis service
-# in semi-colon separated forma
+# in semi-colon separated form
 export REDIS_CUSTOM_ENV="USER=alpha;HOST=beta"
 dokku redis:create lolipop
 
@@ -180,6 +180,10 @@ OR
 ## Backups
 
 Datastore backups are supported via AWS S3 and S3 compatible services like [minio](https://github.com/minio/minio).
+
+You may skip the `backup-auth` step if your dokku install is running within EC2
+and has access to the bucket via an IAM profile. In that case, use the `--use-iam`
+option with the `backup` command.
 
 Backups can be performed using the backup commands:
 
