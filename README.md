@@ -25,7 +25,7 @@ redis:backup-unschedule <name> Unschedules the backup of the redis service
 redis:clone <name> <new-name>  Create container <new-name> then copy data from <name> into <new-name>
 redis:connect <name>           Connect via redis-cli to a redis service
 redis:create <name>            Create a redis service with environment variables
-redis:destroy <name>           Delete the service and stop its container if there are no links left
+redis:destroy <name>           Delete the service, delete the data and stop its container if there are no links left
 redis:enter <name> [command]   Enter or run a command in a running redis service container
 redis:export <name> > <file>   Export a dump of the redis service database
 redis:expose <name> [port]     Expose a redis service on custom port if provided (random port otherwise)
