@@ -21,7 +21,9 @@ redis:backup <name> <bucket> (--use-iam) Create a backup of the redis service to
 redis:backup-auth <name> <aws_access_key_id> <aws_secret_access_key> (<aws_default_region>) (<aws_signature_version>) (<endpoint_url>) Sets up authentication for backups on the redis service
 redis:backup-deauth <name>     Removes backup authentication for the redis service
 redis:backup-schedule <name> <schedule> <bucket> Schedules a backup of the redis service
+redis:backup-set-encryption <name> <encryption_key>, Sets up GPG encryption for future backups of the redis service
 redis:backup-unschedule <name> Unschedules the backup of the redis service
+redis:backup-unset-encryption <name>, Removes backup encryption for future backups of the redis service
 redis:clone <name> <new-name>  Create container <new-name> then copy data from <name> into <new-name>
 redis:connect <name>           Connect via redis-cli to a redis service
 redis:create <name>            Create a redis service with environment variables
