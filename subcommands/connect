@@ -4,19 +4,17 @@ set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 source "$PLUGIN_BASE_PATH/common/functions"
 source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/functions"
 
-redis-connect-cmd() {
+service-connect-cmd() {
+  #E connect to the service via the $PLUGIN_COMMAND_PREFIX connection tool
+  #E dokku $PLUGIN_COMMAND_PREFIX:connect lolipop
+  #A service, service to run command against
   declare desc="connect via redis-cli to a $PLUGIN_SERVICE service"
   local cmd="$PLUGIN_COMMAND_PREFIX:connect" argv=("$@"); [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare SERVICE="$1"
 
   [[ -z "$SERVICE" ]] && dokku_log_fail "Please specify a name for the service"
   verify_service_name "$SERVICE"
-  SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  SERVICE_NAME="$(get_service_name "$SERVICE")"
-  PASSWORD="$(service_password "$SERVICE")"
-  has_tty && SERVICE_TTY_OPTS="-t"
-
-  docker exec -i $SERVICE_TTY_OPTS "$SERVICE_NAME" redis-cli -a "$PASSWORD"
+  service_connect "$SERVICE"
 }
 
-redis-connect-cmd "$@"
+service-connect-cmd "$@"
