@@ -43,11 +43,13 @@ teardown() {
   check_value=""
   report_action="docker-options"
   if [[ "$(dokku version)" == "master" ]]; then
-    check_value="Deploy options: --restart=on-failure:10"
+    check_value="Docker options build: Docker options deploy: --restart=on-failure:10 Docker options run:"
     report_action="docker-options:report"
   elif [[ "$(at-least-version 0.8.1 "$(dokku version)")" == "true" ]]; then
     check_value="Docker options build: Docker options deploy: --restart=on-failure:10 Docker options run:"
     report_action="docker-options:report"
+  elif [[ "$(at-least-version 0.7.0 "$(dokku version)")" == "true" ]]; then
+    check_value="Deploy options: --restart=on-failure:10"
   fi
 
   options=$(dokku $report_action my_app | xargs)
