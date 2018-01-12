@@ -40,14 +40,17 @@ teardown() {
   dokku "$PLUGIN_COMMAND_PREFIX:link" l my_app >&2
   dokku "$PLUGIN_COMMAND_PREFIX:unlink" l my_app
 
+  check_value=""
   report_action="docker-options"
-  [[ "$(dokku version)" == "master" ]] && report_action="docker-options:report"
-  [[ "$(at-least-version 0.8.1 "$(dokku version)")" == "true" ]] && report_action="docker-options:report"
+  if [[ "$(dokku version)" == "master" ]]; then
+    check_value="Deploy options: --restart=on-failure:10"
+    report_action="docker-options:report"
+  elif [[ "$(at-least-version 0.8.1 "$(dokku version)")" == "true" ]]; then
+    check_value="Docker options build: Docker options deploy: --restart=on-failure:10 Docker options run:"
+    report_action="docker-options:report"
+  fi
 
   options=$(dokku $report_action my_app | xargs)
-  check_value=""
-  [[ "$(dokku version)" == "master" ]] && check_value="Deploy options: --restart=on-failure:10"
-  [[ "$(at-least-version 0.7.0 "$(dokku version)")" == "true" ]] && check_value="Deploy options: --restart=on-failure:10"
   assert_equal "$options" "$check_value"
 }
 
