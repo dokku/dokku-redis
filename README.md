@@ -29,11 +29,13 @@ redis:connect <name>           Connect via redis-cli to a redis service
 redis:create <name>            Create a redis service with environment variables
 redis:destroy <name>           Delete the service, delete the data and stop its container if there are no links left
 redis:enter <name> [command]   Enter or run a command in a running redis service container
+redis:exists <service>         Check if the redis service exists
 redis:export <name> > <file>   Export a dump of the redis service database
 redis:expose <name> [port]     Expose a redis service on custom port if provided (random port otherwise)
 redis:import <name> <file>     Import a dump into the redis service database
 redis:info <name>              Print the connection information
 redis:link <name> <app>        Link the redis service to the app
+redis:linked <name> <app>      Check if the redis service is linked to an app
 redis:list                     List all redis services
 redis:logs <name> [-t]         Print the most recent log(s) for this service
 redis:promote <name> <app>     Promote service <name> as REDIS_URL in <app>
