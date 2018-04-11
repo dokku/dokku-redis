@@ -221,3 +221,9 @@ dokku redis:backup-auth lolipop AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_REGI
 # more specific example for minio auth
 dokku redis:backup-auth lolipop MINIO_ACCESS_KEY_ID MINIO_SECRET_ACCESS_KEY us-east-1 s3v4 https://YOURMINIOSERVICE
 ```
+
+## Disabling `docker pull` calls
+
+If you wish to disable the `docker pull` calls that the plugin triggers, you may set the `REDIS_DISABLE_PULL` environment variable to `true`. Once disabled, you will need to pull the service image you wish to deploy as shown in the `stderr` output.
+
+Please ensure the proper images are in place when `docker pull` is disabled.
