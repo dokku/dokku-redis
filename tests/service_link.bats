@@ -68,3 +68,10 @@ teardown() {
   assert_contains "$url" "redis2://l:$password@dokku-redis-l:6379"
   dokku "$PLUGIN_COMMAND_PREFIX:unlink" l my_app
 }
+
+@test "($PLUGIN_COMMAND_PREFIX:link) adds a querystring" {
+  dokku "$PLUGIN_COMMAND_PREFIX:link" l my_app --querystring "pool=5"
+  url=$(dokku config:get my_app REDIS_URL)
+  assert_contains "$url" "?pool=4"
+  dokku "$PLUGIN_COMMAND_PREFIX:unlink" l my_app
+}
