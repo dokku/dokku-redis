@@ -17,6 +17,7 @@ sudo dokku plugin:install https://github.com/dokku/dokku-redis.git redis
 ## commands
 
 ```
+redis:app-links <app>          List all redis service links for a given app
 redis:backup <name> <bucket> (--use-iam) Create a backup of the redis service to an existing s3 bucket
 redis:backup-auth <name> <aws_access_key_id> <aws_secret_access_key> (<aws_default_region>) (<aws_signature_version>) (<endpoint_url>) Sets up authentication for backups on the redis service
 redis:backup-deauth <name>     Removes backup authentication for the redis service
