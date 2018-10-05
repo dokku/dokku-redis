@@ -148,3 +148,10 @@ service_url() {
   local SERVICE_DNS_HOSTNAME="$(service_dns_hostname "$SERVICE")"
   echo "$PLUGIN_SCHEME://$SERVICE:$PASSWORD@$SERVICE_DNS_HOSTNAME:${PLUGIN_DATASTORE_PORTS[0]}"
 }
+
+jdbc_url() {
+  local SERVICE="$1"
+  local PASSWORD="$(service_password "$SERVICE")"
+  local SERVICE_DNS_HOSTNAME="$(service_dns_hostname "$SERVICE")"
+  echo "jdbc:$PLUGIN_SCHEME://$SERVICE_DNS_HOSTNAME:${PLUGIN_DATASTORE_PORTS[0]}/?user=$SERVICE&password=$PASSWORD"
+}
