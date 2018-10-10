@@ -46,6 +46,7 @@ redis:start <name>             Start a previously stopped redis service
 redis:stop <name>              Stop a running redis service
 redis:unexpose <name>          Unexpose a previously exposed redis service
 redis:unlink <name> <app>      Unlink the redis service from the app
+redis:upgrade <name>           Upgrade service <service> to the specified version
 ```
 
 ## usage
