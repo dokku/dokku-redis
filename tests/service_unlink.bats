@@ -52,7 +52,7 @@ teardown() {
     check_value="Deploy options: --restart=on-failure:10"
   fi
 
-  options=$(dokku $report_action my_app | xargs)
+  options=$(dokku --quiet $report_action my_app | xargs)
   assert_equal "$options" "$check_value"
 }
 
