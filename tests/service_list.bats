@@ -11,20 +11,20 @@ teardown() {
 
 @test "($PLUGIN_COMMAND_PREFIX:list) with no exposed ports, no linked apps" {
   run dokku "$PLUGIN_COMMAND_PREFIX:list"
-  assert_contains "${lines[*]}" "l     redis:4.0.8  running  -              -"
+  assert_contains "${lines[*]}" "l     redis:4.0.11  running  -              -"
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:list) with exposed ports" {
   dokku "$PLUGIN_COMMAND_PREFIX:expose" l 4242
   run dokku "$PLUGIN_COMMAND_PREFIX:list"
-  assert_contains "${lines[*]}" "l     redis:4.0.8  running  6379->4242     -"
+  assert_contains "${lines[*]}" "l     redis:4.0.11  running  6379->4242     -"
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:list) with linked app" {
   dokku apps:create my_app
   dokku "$PLUGIN_COMMAND_PREFIX:link" l my_app
   run dokku "$PLUGIN_COMMAND_PREFIX:list"
-  assert_contains "${lines[*]}" "l     redis:4.0.8  running  -              my_app"
+  assert_contains "${lines[*]}" "l     redis:4.0.11  running  -              my_app"
   dokku --force apps:destroy my_app
 }
 
