@@ -133,17 +133,3 @@ service_start() {
     dokku_log_verbose_quiet "Neither container nor valid configuration exists for $SERVICE"
   fi
 }
-
-service_password() {
-    local SERVICE="$1"
-    local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-    local PASSWORD="$(cat "$SERVICE_ROOT/PASSWORD")"
-    echo "$PASSWORD"
-}
-
-service_url() {
-  local SERVICE="$1"
-  local PASSWORD="$(service_password "$SERVICE")"
-  local SERVICE_DNS_HOSTNAME="$(service_dns_hostname "$SERVICE")"
-  echo "$PLUGIN_SCHEME://$SERVICE:$PASSWORD@$SERVICE_DNS_HOSTNAME:${PLUGIN_DATASTORE_PORTS[0]}"
-}
