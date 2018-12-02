@@ -112,9 +112,11 @@ dokku redis:link lolipop playground
 # and the following will be set on the linked application by default
 #
 #   REDIS_URL=redis://lolipop:SOME_PASSWORD@dokku-redis-lolipop:6379
+#   JDBC_REDIS_URL=redis://dokku-redis-lolipop:6379?user=lolipop&password=SOME_PASSWORD
 #
 # NOTE: the host exposed here only works internally in docker containers. If
 # you want your container to be reachable from outside, you should use `expose`.
+# As well, we shall omit the JDBC url from all following examples for brevity.
 
 # another service can be linked to your app
 dokku redis:link other_service playground
