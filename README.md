@@ -23,7 +23,7 @@ redis:backup-auth <name> <aws_access_key_id> <aws_secret_access_key> (<aws_defau
 redis:backup-deauth <name>     Removes backup authentication for the redis service
 redis:backup-schedule <name> <schedule> <bucket> Schedules a backup of the redis service
 redis:backup-schedule-cat <name> Cat the contents of the configured backup cronfile for the service
-redis:backup-set-encryption <name> <encryption_key> Sets up GPG encryption for future backups of the redis service
+redis:backup-set-encryption <name> <passphrase> Set a GPG passphrase for backups
 redis:backup-unschedule <name> Unschedules the backup of the redis service
 redis:backup-unset-encryption <name> Removes backup encryption for future backups of the redis service
 redis:clone <name> <new-name>  Create container <new-name> then copy data from <name> into <new-name>
