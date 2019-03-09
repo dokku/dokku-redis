@@ -8,8 +8,6 @@ if [[ -f "$PLUGIN_AVAILABLE_PATH/docker-options/functions" ]]; then
   source "$PLUGIN_AVAILABLE_PATH/docker-options/functions"
 fi
 
-# non-generic functions
-
 service_connect() {
   local SERVICE="$1"
   local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
@@ -23,7 +21,8 @@ service_connect() {
 
 service_create() {
   local SERVICE="$1"
-  [[ -z "$SERVICE" ]] && dokku_log_fail "Please specify a name for the service"
+  is_valid_service_name "$SERVICE" || dokku_log_fail "Please specify a valid name for the service. Valid characters are: [A-Za-z0-9_]+"
+  [[ -z "$SERVICE" ]] && dokku_log_fail "Please specify a valid name for the service"
   [[ ! -d "$PLUGIN_DATA_ROOT/$SERVICE" ]] || dokku_log_fail "$PLUGIN_SERVICE service $SERVICE already exists"
   SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"; LINKS_FILE="$SERVICE_ROOT/LINKS"
 
@@ -42,6 +41,8 @@ service_create() {
   mkdir -p "$SERVICE_ROOT" || dokku_log_fail "Unable to create service directory"
   mkdir -p "$SERVICE_ROOT/data" || dokku_log_fail "Unable to create service data directory"
   mkdir -p "$SERVICE_ROOT/config" || dokku_log_fail "Unable to create service config directory"
+  touch "$LINKS_FILE"
+
   if [[ -z $REDIS_CONFIG_PATH ]] ; then
     curl -sSL "https://raw.githubusercontent.com/antirez/redis/${PLUGIN_IMAGE_VERSION:0:3}/redis.conf" > "$SERVICE_ROOT/config/redis.conf" || dokku_log_fail "Unable to download the default redis.conf to the config directory"
   else
@@ -55,7 +56,6 @@ service_create() {
   echo "$PASSWORD" > "$SERVICE_ROOT/PASSWORD"
   chmod 640 "$SERVICE_ROOT/PASSWORD"
   sed -i.bak "s/# requirepass.*/requirepass ${PASSWORD}/" "$SERVICE_ROOT/config/redis.conf" && rm "$SERVICE_ROOT/config/redis.conf.bak"
-  touch "$LINKS_FILE"
 
   [[ -n "$SERVICE_CUSTOM_ENV" ]] && REDIS_CUSTOM_ENV="$SERVICE_CUSTOM_ENV"
   if [[ -n $REDIS_CUSTOM_ENV ]]; then
