@@ -8,7 +8,7 @@ setup() {
 
 teardown() {
   export ECHO_DOCKER_COMMAND="false"
-  dokku --force "$PLUGIN_COMMAND_PREFIX:destroy" l >&2
+  dokku --force --trace "$PLUGIN_COMMAND_PREFIX:destroy" l >&2
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:clone) error when there are no arguments" {
