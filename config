@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 export REDIS_IMAGE=${REDIS_IMAGE:="redis"}
 export REDIS_IMAGE_VERSION=${REDIS_IMAGE_VERSION:="4.0.11"}
-export REDIS_ROOT=${REDIS_ROOT:="/var/lib/dokku/services/redis"}
+export REDIS_ROOT=${REDIS_ROOT:="$DOKKU_LIB_ROOT/services/redis"}
 export REDIS_HOST_ROOT=${REDIS_HOST_ROOT:=$REDIS_ROOT}
 
 export PLUGIN_UNIMPLEMENTED_SUBCOMMANDS=()

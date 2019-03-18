@@ -2,15 +2,15 @@
 load test_helper
 
 setup() {
-  dokku "$PLUGIN_COMMAND_PREFIX:create" l >&2
-  dokku apps:create my_app >&2
+  dokku "$PLUGIN_COMMAND_PREFIX:create" l
+  dokku apps:create my_app
   dokku "$PLUGIN_COMMAND_PREFIX:link" l my_app
 }
 
 teardown() {
   dokku "$PLUGIN_COMMAND_PREFIX:unlink" l my_app
-  dokku --force "$PLUGIN_COMMAND_PREFIX:destroy" l >&2
-  rm -rf "$DOKKU_ROOT/my_app"
+  dokku --force "$PLUGIN_COMMAND_PREFIX:destroy" l
+  dokku --force apps:destroy my_app
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:promote) error when there are no arguments" {
@@ -39,7 +39,7 @@ teardown() {
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:promote) changes REDIS_URL" {
-  password="$(cat "$PLUGIN_DATA_ROOT/l/PASSWORD")"
+  password="$(sudo cat "$PLUGIN_DATA_ROOT/l/PASSWORD")"
   dokku config:set my_app "REDIS_URL=redis://u:p@host:6379/db" "DOKKU_REDIS_BLUE_URL=redis://l:$password@dokku-redis-l:6379"
   dokku "$PLUGIN_COMMAND_PREFIX:promote" l my_app
   url=$(dokku config:get my_app REDIS_URL)
@@ -47,7 +47,7 @@ teardown() {
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:promote) creates new config url when needed" {
-  password="$(cat "$PLUGIN_DATA_ROOT/l/PASSWORD")"
+  password="$(sudo cat "$PLUGIN_DATA_ROOT/l/PASSWORD")"
   dokku config:set my_app "REDIS_URL=redis://u:p@host:6379/db" "DOKKU_REDIS_BLUE_URL=redis://l:$password@dokku-redis-l:6379"
   dokku "$PLUGIN_COMMAND_PREFIX:promote" l my_app
   run dokku config my_app
@@ -55,7 +55,7 @@ teardown() {
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:promote) uses REDIS_DATABASE_SCHEME variable" {
-  password="$(cat "$PLUGIN_DATA_ROOT/l/PASSWORD")"
+  password="$(sudo cat "$PLUGIN_DATA_ROOT/l/PASSWORD")"
   dokku config:set my_app "REDIS_DATABASE_SCHEME=redis2" "REDIS_URL=redis://u:p@host:6379" "DOKKU_REDIS_BLUE_URL=redis2://l:$password@dokku-redis-l:6379"
   dokku "$PLUGIN_COMMAND_PREFIX:promote" l my_app
   url=$(dokku config:get my_app REDIS_URL)
