@@ -3,13 +3,16 @@ load test_helper
 
 setup() {
   dokku "$PLUGIN_COMMAND_PREFIX:create" l
+  dokku "$PLUGIN_COMMAND_PREFIX:create" m
   dokku apps:create my_app
 }
 
 teardown() {
+  dokku --force "$PLUGIN_COMMAND_PREFIX:destroy" m
   dokku --force "$PLUGIN_COMMAND_PREFIX:destroy" l
   dokku --force apps:destroy my_app
 }
+
 
 @test "($PLUGIN_COMMAND_PREFIX:link) error when there are no arguments" {
   run dokku "$PLUGIN_COMMAND_PREFIX:link"
@@ -69,8 +72,14 @@ teardown() {
   dokku config:set my_app REDIS_URL=redis://host:6379
   dokku "$PLUGIN_COMMAND_PREFIX:link" l my_app
   run dokku config my_app
-  assert_contains "${lines[*]}" "DOKKU_REDIS_"
+  assert_contains "${lines[*]}" "DOKKU_REDIS_AQUA_URL"
   assert_success
+
+  dokku "$PLUGIN_COMMAND_PREFIX:link" m my_app
+  run dokku config my_app
+  assert_contains "${lines[*]}" "DOKKU_REDIS_BLACK_URL"
+  assert_success
+  dokku "$PLUGIN_COMMAND_PREFIX:unlink" m my_app
   dokku "$PLUGIN_COMMAND_PREFIX:unlink" l my_app
 }
 
