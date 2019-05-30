@@ -65,6 +65,8 @@ service_create() {
   else
     echo "" >"$SERVICE_ROOT/ENV"
   fi
+
+  write_database_name "$SERVICE"
   service_create_container "$SERVICE"
 }
 
