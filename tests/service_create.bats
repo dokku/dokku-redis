@@ -11,7 +11,6 @@ load test_helper
   run dokku "$PLUGIN_COMMAND_PREFIX:create" service-with-dashes
   assert_contains "${lines[*]}" "container created: service-with-dashes"
   assert_contains "${lines[*]}" "dokku-$PLUGIN_COMMAND_PREFIX-service-with-dashes"
-  assert_contains "${lines[*]}" "service_with_dashes"
 
   dokku --force "$PLUGIN_COMMAND_PREFIX:destroy" service-with-dashes
 }
