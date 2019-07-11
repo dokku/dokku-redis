@@ -142,13 +142,6 @@ service_start() {
   fi
 }
 
-service_password() {
-  local SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local PASSWORD="$(cat "$SERVICE_ROOT/PASSWORD")"
-  echo "$PASSWORD"
-}
-
 service_url() {
   local SERVICE="$1"
   local PASSWORD="$(service_password "$SERVICE")"
