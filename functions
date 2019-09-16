@@ -93,7 +93,16 @@ service_export() {
   local PASSWORD="$(service_password "$SERVICE")"
 
   [[ -n $SSH_TTY ]] && stty -opost
-  docker exec "$SERVICE_NAME" bash -c "echo SAVE | redis-cli -a ${PASSWORD}" >/dev/null 2>&1
+  LASTSAVE1=$(docker exec "$SERVICE_NAME" bash -c "echo LASTSAVE | redis-cli -a ${PASSWORD}")
+  docker exec "$SERVICE_NAME" bash -c "echo BGSAVE | redis-cli -a ${PASSWORD}" >/dev/null 2>&1
+  LASTSAVE2=$(docker exec "$SERVICE_NAME" bash -c "echo LASTSAVE | redis-cli -a ${PASSWORD}")
+
+  until [[ "$LASTSAVE1" != "$LASTSAVE2" ]];
+  do
+    LASTSAVE2=$(docker exec "$SERVICE_NAME" bash -c "echo LASTSAVE | redis-cli -a ${PASSWORD}")
+    sleep 5
+  done
+
   docker exec "$SERVICE_NAME" cat /data/dump.rdb
   status=$?
   [[ -n $SSH_TTY ]] && stty opost
