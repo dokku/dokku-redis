@@ -35,7 +35,7 @@ redis:exists <service>                             # check if the redis service 
 redis:export <service>                             # export a dump of the redis service database
 redis:expose <service> <ports...>                  # expose a redis service on custom port if provided (random port otherwise)
 redis:import <service>                             # import a dump into the redis service database
-redis:info <service> [--single-info-flag]          # print the connection information
+redis:info <service> [--single-info-flag]          # print the service information
 redis:link <service> <app> [--link-flags...]       # link the redis service to the app
 redis:linked <service> <app>                       # check if the redis service is linked to an app
 redis:links <service>                              # list all apps linked to the redis service
@@ -55,20 +55,7 @@ redis:upgrade <service> [--upgrade-flags...]       # upgrade service <service> t
 Help for any commands can be displayed by specifying the command as an argument to redis:help. Please consult the `redis:help` command for any undocumented commands.
 
 ### Basic Usage
-### list all redis services
 
-```shell
-# usage
-dokku redis:list 
-```
-
-examples:
-
-List all services:
-
-```shell
-dokku redis:list
-```
 ### create a redis service
 
 ```shell
@@ -76,15 +63,13 @@ dokku redis:list
 dokku redis:create <service> [--create-flags...]
 ```
 
-examples:
-
 Create a redis service named lolipop:
 
 ```shell
 dokku redis:create lolipop
 ```
 
-You can also specify the image and image version to use for the service. It *must* be compatible with the ${plugin_image} image. :
+You can also specify the image and image version to use for the service. It *must* be compatible with the ${plugin_image} image.
 
 ```shell
 export REDIS_IMAGE="${PLUGIN_IMAGE}"
@@ -92,20 +77,19 @@ export REDIS_IMAGE_VERSION="${PLUGIN_IMAGE_VERSION}"
 dokku redis:create lolipop
 ```
 
-You can also specify custom environment variables to start the redis service in semi-colon separated form. :
+You can also specify custom environment variables to start the redis service in semi-colon separated form.
 
 ```shell
 export REDIS_CUSTOM_ENV="USER=alpha;HOST=beta"
 dokku redis:create lolipop
 ```
-### print the connection information
+
+### print the service information
 
 ```shell
 # usage
 dokku redis:info <service> [--single-info-flag]
 ```
-
-examples:
 
 Get connection information as follows:
 
@@ -127,14 +111,26 @@ dokku redis:info lolipop --service-root
 dokku redis:info lolipop --status
 dokku redis:info lolipop --version
 ```
+
+### list all redis services
+
+```shell
+# usage
+dokku redis:list 
+```
+
+List all services:
+
+```shell
+dokku redis:list
+```
+
 ### print the most recent log(s) for this service
 
 ```shell
 # usage
 dokku redis:logs <service> [-t|--tail]
 ```
-
-examples:
 
 You can tail logs for a particular service:
 
@@ -147,6 +143,7 @@ By default, logs will not be tailed, but you can do this with the --tail flag:
 ```shell
 dokku redis:logs lolipop --tail
 ```
+
 ### link the redis service to the app
 
 ```shell
@@ -154,9 +151,7 @@ dokku redis:logs lolipop --tail
 dokku redis:link <service> <app> [--link-flags...]
 ```
 
-examples:
-
-A redis service can be linked to a container. This will use native docker links via the docker-options plugin. Here we link it to our 'playground' app. :
+A redis service can be linked to a container. This will use native docker links via the docker-options plugin. Here we link it to our 'playground' app.
 
 > NOTE: this will restart your app
 
@@ -187,7 +182,7 @@ The host exposed here only works internally in docker containers. If you want yo
 dokku redis:link other_service playground
 ```
 
-It is possible to change the protocol for redis_url by setting the environment variable redis_database_scheme on the app. Doing so will after linking will cause the plugin to think the service is not linked, and we advise you to unlink before proceeding. :
+It is possible to change the protocol for redis_url by setting the environment variable redis_database_scheme on the app. Doing so will after linking will cause the plugin to think the service is not linked, and we advise you to unlink before proceeding.
 
 ```shell
 dokku config:set playground REDIS_DATABASE_SCHEME=redis2
@@ -199,6 +194,7 @@ This will cause redis_url to be set as:
 ```
 redis2://lolipop:SOME_PASSWORD@dokku-redis-lolipop:6379/lolipop
 ```
+
 ### unlink the redis service from the app
 
 ```shell
@@ -206,28 +202,12 @@ redis2://lolipop:SOME_PASSWORD@dokku-redis-lolipop:6379/lolipop
 dokku redis:unlink <service> <app>
 ```
 
-examples:
-
 You can unlink a redis service:
 
 > NOTE: this will restart your app and unset related environment variables
 
 ```shell
 dokku redis:unlink lolipop playground
-```
-### delete the redis service/data/container if there are no links left
-
-```shell
-# usage
-dokku redis:destroy <service> [-f|--force]
-```
-
-examples:
-
-Destroy the service, it's data, and the running container:
-
-```shell
-dokku redis:destroy lolipop
 ```
 
 ### Service Lifecycle
@@ -241,13 +221,12 @@ The lifecycle of each service can be managed through the following commands:
 dokku redis:connect <service>
 ```
 
-examples:
-
 Connect to the service via the redis connection tool:
 
 ```shell
 dokku redis:connect lolipop
 ```
+
 ### enter or run a command in a running redis service container
 
 ```shell
@@ -255,19 +234,18 @@ dokku redis:connect lolipop
 dokku redis:enter <service>
 ```
 
-examples:
-
-A bash prompt can be opened against a running service. Filesystem changes will not be saved to disk. :
+A bash prompt can be opened against a running service. Filesystem changes will not be saved to disk.
 
 ```shell
 dokku redis:enter lolipop
 ```
 
-You may also run a command directly against the service. Filesystem changes will not be saved to disk. :
+You may also run a command directly against the service. Filesystem changes will not be saved to disk.
 
 ```shell
 dokku redis:enter lolipop touch /tmp/test
 ```
+
 ### expose a redis service on custom port if provided (random port otherwise)
 
 ```shell
@@ -275,13 +253,12 @@ dokku redis:enter lolipop touch /tmp/test
 dokku redis:expose <service> <ports...>
 ```
 
-examples:
-
 Expose the service on the service's normal ports, allowing access to it from the public interface (0. 0. 0. 0):
 
 ```shell
 dokku redis:expose lolipop ${PLUGIN_DATASTORE_PORTS[@]}
 ```
+
 ### unexpose a previously exposed redis service
 
 ```shell
@@ -289,21 +266,18 @@ dokku redis:expose lolipop ${PLUGIN_DATASTORE_PORTS[@]}
 dokku redis:unexpose <service>
 ```
 
-examples:
-
 Unexpose the service, removing access to it from the public interface (0. 0. 0. 0):
 
 ```shell
 dokku redis:unexpose lolipop
 ```
+
 ### promote service <service> as REDIS_URL in <app>
 
 ```shell
 # usage
 dokku redis:promote <service> <app>
 ```
-
-examples:
 
 If you have a redis service linked to an app and try to link another redis service another link environment variable will be generated automatically:
 
@@ -326,20 +300,7 @@ REDIS_URL=redis://other_service:ANOTHER_PASSWORD@dokku-redis-other-service:6379/
 DOKKU_REDIS_BLUE_URL=redis://other_service:ANOTHER_PASSWORD@dokku-redis-other-service:6379/other_service
 DOKKU_REDIS_SILVER_URL=redis://lolipop:SOME_PASSWORD@dokku-redis-lolipop:6379/lolipop
 ```
-### graceful shutdown and restart of the redis service container
 
-```shell
-# usage
-dokku redis:restart <service>
-```
-
-examples:
-
-Restart the service:
-
-```shell
-dokku redis:restart lolipop
-```
 ### start a previously stopped redis service
 
 ```shell
@@ -347,13 +308,12 @@ dokku redis:restart lolipop
 dokku redis:start <service>
 ```
 
-examples:
-
 Start the service:
 
 ```shell
 dokku redis:start lolipop
 ```
+
 ### stop a running redis service
 
 ```shell
@@ -361,21 +321,31 @@ dokku redis:start lolipop
 dokku redis:stop <service>
 ```
 
-examples:
-
 Stop the service and the running container:
 
 ```shell
 dokku redis:stop lolipop
 ```
+
+### graceful shutdown and restart of the redis service container
+
+```shell
+# usage
+dokku redis:restart <service>
+```
+
+Restart the service:
+
+```shell
+dokku redis:restart lolipop
+```
+
 ### upgrade service <service> to the specified versions
 
 ```shell
 # usage
 dokku redis:upgrade <service> [--upgrade-flags...]
 ```
-
-examples:
 
 You can upgrade an existing service to a new image or image-version:
 
@@ -394,13 +364,12 @@ Service scripting can be executed using the following commands:
 dokku redis:app-links <app>
 ```
 
-examples:
-
-List all redis services that are linked to the 'playground' app. :
+List all redis services that are linked to the 'playground' app.
 
 ```shell
 dokku redis:app-links playground
 ```
+
 ### create container <new-name> then copy data from <name> into <new-name>
 
 ```shell
@@ -408,13 +377,12 @@ dokku redis:app-links playground
 dokku redis:clone <service> <new-service> [--clone-flags...]
 ```
 
-examples:
-
 You can clone an existing service to a new one:
 
 ```shell
 dokku redis:clone lolipop lolipop-2
 ```
+
 ### check if the redis service exists
 
 ```shell
@@ -422,13 +390,12 @@ dokku redis:clone lolipop lolipop-2
 dokku redis:exists <service>
 ```
 
-examples:
-
-Here we check if the lolipop redis service exists. :
+Here we check if the lolipop redis service exists.
 
 ```shell
 dokku redis:exists lolipop
 ```
+
 ### check if the redis service is linked to an app
 
 ```shell
@@ -436,13 +403,12 @@ dokku redis:exists lolipop
 dokku redis:linked <service> <app>
 ```
 
-examples:
-
-Here we check if the lolipop redis service is linked to the 'playground' app. :
+Here we check if the lolipop redis service is linked to the 'playground' app.
 
 ```shell
 dokku redis:linked lolipop playground
 ```
+
 ### list all apps linked to the redis service
 
 ```shell
@@ -450,9 +416,7 @@ dokku redis:linked lolipop playground
 dokku redis:links <service>
 ```
 
-examples:
-
-List all apps linked to the 'lolipop' redis service. :
+List all apps linked to the 'lolipop' redis service.
 
 ```shell
 dokku redis:links lolipop
@@ -469,21 +433,18 @@ The underlying service data can be imported and exported with the following comm
 dokku redis:import <service>
 ```
 
-examples:
-
 Import a datastore dump:
 
 ```shell
 dokku redis:import lolipop < database.dump
 ```
+
 ### export a dump of the redis service database
 
 ```shell
 # usage
 dokku redis:export <service>
 ```
-
-examples:
 
 By default, datastore output is exported to stdout:
 
@@ -512,8 +473,6 @@ Backups can be performed using the backup commands:
 dokku redis:backup-auth <service> <aws-access-key-id> <aws-secret-access-key> <aws-default-region> <aws-signature-version> <endpoint-url>
 ```
 
-examples:
-
 Setup s3 backup authentication:
 
 ```shell
@@ -537,6 +496,7 @@ More specific example for minio auth:
 ```shell
 dokku redis:backup-auth lolipop MINIO_ACCESS_KEY_ID MINIO_SECRET_ACCESS_KEY us-east-1 s3v4 https://YOURMINIOSERVICE
 ```
+
 ### removes backup authentication for the redis service
 
 ```shell
@@ -544,13 +504,12 @@ dokku redis:backup-auth lolipop MINIO_ACCESS_KEY_ID MINIO_SECRET_ACCESS_KEY us-e
 dokku redis:backup-deauth <service>
 ```
 
-examples:
-
 Remove s3 authentication:
 
 ```shell
 dokku redis:backup-deauth lolipop
 ```
+
 ### creates a backup of the redis service to an existing s3 bucket
 
 ```shell
@@ -558,13 +517,12 @@ dokku redis:backup-deauth lolipop
 dokku redis:backup <service> <bucket-name> [--use-iam]
 ```
 
-examples:
-
 Backup the 'lolipop' service to the 'my-s3-bucket' bucket on aws:
 
 ```shell
 dokku redis:backup lolipop my-s3-bucket --use-iam
 ```
+
 ### sets encryption for all future backups of redis service
 
 ```shell
@@ -572,13 +530,12 @@ dokku redis:backup lolipop my-s3-bucket --use-iam
 dokku redis:backup-set-encryption <service> <passphrase>
 ```
 
-examples:
-
 Set a gpg passphrase for backups:
 
 ```shell
 dokku redis:backup-set-encryption lolipop
 ```
+
 ### unsets encryption for future backups of the redis service
 
 ```shell
@@ -586,21 +543,18 @@ dokku redis:backup-set-encryption lolipop
 dokku redis:backup-unset-encryption <service>
 ```
 
-examples:
-
 Unset a gpg encryption key for backups:
 
 ```shell
 dokku redis:backup-unset-encryption lolipop
 ```
+
 ### schedules a backup of the redis service
 
 ```shell
 # usage
 dokku redis:backup-schedule <service> <schedule> <bucket-name> [--use-iam]
 ```
-
-examples:
 
 Schedule a backup:
 
@@ -615,6 +569,7 @@ Schedule a backup and authenticate via iam:
 ```shell
 dokku redis:backup-schedule lolipop "0 3 * * *" my-s3-bucket --use-iam
 ```
+
 ### cat the contents of the configured backup cronfile for the service
 
 ```shell
@@ -622,21 +577,18 @@ dokku redis:backup-schedule lolipop "0 3 * * *" my-s3-bucket --use-iam
 dokku redis:backup-schedule-cat <service>
 ```
 
-examples:
-
 Cat the contents of the configured backup cronfile for the service:
 
 ```shell
 dokku redis:backup-schedule-cat lolipop
 ```
+
 ### unschedules the backup of the redis service
 
 ```shell
 # usage
 dokku redis:backup-unschedule <service>
 ```
-
-examples:
 
 Remove the scheduled backup from cron:
 
