@@ -530,7 +530,7 @@ dokku redis:backup lolipop my-s3-bucket --use-iam
 dokku redis:backup-set-encryption <service> <passphrase>
 ```
 
-Set a gpg passphrase for backups:
+Set the gpg-compatible passphrase for encrypting backups for backups:
 
 ```shell
 dokku redis:backup-set-encryption lolipop
@@ -543,7 +543,7 @@ dokku redis:backup-set-encryption lolipop
 dokku redis:backup-unset-encryption <service>
 ```
 
-Unset a gpg encryption key for backups:
+Unset the gpg encryption passphrase for backups:
 
 ```shell
 dokku redis:backup-unset-encryption lolipop
