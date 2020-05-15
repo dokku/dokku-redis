@@ -63,6 +63,14 @@ Help for any commands can be displayed by specifying the command as an argument 
 dokku redis:create <service> [--create-flags...]
 ```
 
+flags:
+
+- `-C|--custom-env "USER=alpha;HOST=beta"`: semi-colon delimited environment variables to start the service with
+- `-i|--image IMAGE`: the image name to start the service with
+- `-I|--image-version IMAGE_VERSION`: the image version to start the service with
+- `-p|--password PASSWORD`: override the user-level service password
+- `-r|--root-password PASSWORD`: override the root-level service password
+
 Create a redis service named lolipop:
 
 ```shell
@@ -90,6 +98,19 @@ dokku redis:create lolipop
 # usage
 dokku redis:info <service> [--single-info-flag]
 ```
+
+flags:
+
+- `--config-dir`: show the service configuration directory
+- `--data-dir`: show the service data directory
+- `--dsn`: show the service DSN
+- `--exposed-ports`: show service exposed ports
+- `--id`: show the service container id
+- `--internal-ip`: show the service internal ip
+- `--links`: show the service app links
+- `--service-root`: show the service root directory
+- `--status`: show the service running status
+- `--version`: show the service image version
 
 Get connection information as follows:
 
@@ -132,6 +153,10 @@ dokku redis:list
 dokku redis:logs <service> [-t|--tail]
 ```
 
+flags:
+
+- `-t|--tail`: do not stop when end of the logs are reached and wait for additional output
+
 You can tail logs for a particular service:
 
 ```shell
@@ -150,6 +175,11 @@ dokku redis:logs lolipop --tail
 # usage
 dokku redis:link <service> <app> [--link-flags...]
 ```
+
+flags:
+
+- `-a|--alias "BLUE_DATABASE"`: an alternative alias to use for linking to an app via environment variable
+- `-q|--querystring "pool=5"`: ampersand delimited querystring arguments to append to the service link
 
 A redis service can be linked to a container. This will use native docker links via the docker-options plugin. Here we link it to our 'playground' app.
 
@@ -347,6 +377,13 @@ dokku redis:restart lolipop
 dokku redis:upgrade <service> [--upgrade-flags...]
 ```
 
+flags:
+
+- `-C|--custom-env "USER=alpha;HOST=beta"`: semi-colon delimited environment variables to start the service with
+- `-i|--image IMAGE`: the image name to start the service with
+- `-I|--image-version IMAGE_VERSION`: the image version to start the service with
+- `-R|--restart-apps "true"`: whether to force an app restart
+
 You can upgrade an existing service to a new image or image-version:
 
 ```shell
@@ -376,6 +413,14 @@ dokku redis:app-links playground
 # usage
 dokku redis:clone <service> <new-service> [--clone-flags...]
 ```
+
+flags:
+
+- `-C|--custom-env "USER=alpha;HOST=beta"`: semi-colon delimited environment variables to start the service with
+- `-i|--image IMAGE`: the image name to start the service with
+- `-I|--image-version IMAGE_VERSION`: the image version to start the service with
+- `-p|--password PASSWORD`: override the user-level service password
+- `-r|--root-password PASSWORD`: override the root-level service password
 
 You can clone an existing service to a new one:
 
@@ -517,6 +562,10 @@ dokku redis:backup-deauth lolipop
 dokku redis:backup <service> <bucket-name> [--use-iam]
 ```
 
+flags:
+
+- `-u|--use-iam`: use the IAM profile associated with the current server
+
 Backup the 'lolipop' service to the 'my-s3-bucket' bucket on aws:
 
 ```shell
@@ -555,6 +604,10 @@ dokku redis:backup-unset-encryption lolipop
 # usage
 dokku redis:backup-schedule <service> <schedule> <bucket-name> [--use-iam]
 ```
+
+flags:
+
+- `-u|--use-iam`: use the IAM profile associated with the current server
 
 Schedule a backup:
 
