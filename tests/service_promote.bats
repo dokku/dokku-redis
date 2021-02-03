@@ -40,15 +40,15 @@ teardown() {
 
 @test "($PLUGIN_COMMAND_PREFIX:promote) changes REDIS_URL" {
   password="$(sudo cat "$PLUGIN_DATA_ROOT/l/PASSWORD")"
-  dokku config:set my_app "REDIS_URL=redis://u:p@host:6379/db" "DOKKU_REDIS_BLUE_URL=redis://l:$password@dokku-redis-l:6379"
+  dokku config:set my_app "REDIS_URL=redis://:p@host:6379/db" "DOKKU_REDIS_BLUE_URL=redis://:$password@dokku-redis-l:6379"
   dokku "$PLUGIN_COMMAND_PREFIX:promote" l my_app
   url=$(dokku config:get my_app REDIS_URL)
-  assert_equal "$url" "redis://l:$password@dokku-redis-l:6379"
+  assert_equal "$url" "redis://:$password@dokku-redis-l:6379"
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:promote) creates new config url when needed" {
   password="$(sudo cat "$PLUGIN_DATA_ROOT/l/PASSWORD")"
-  dokku config:set my_app "REDIS_URL=redis://u:p@host:6379/db" "DOKKU_REDIS_BLUE_URL=redis://l:$password@dokku-redis-l:6379"
+  dokku config:set my_app "REDIS_URL=redis://:p@host:6379/db" "DOKKU_REDIS_BLUE_URL=redis://:$password@dokku-redis-l:6379"
   dokku "$PLUGIN_COMMAND_PREFIX:promote" l my_app
   run dokku config my_app
   assert_contains "${lines[*]}" "DOKKU_REDIS_"
@@ -56,8 +56,8 @@ teardown() {
 
 @test "($PLUGIN_COMMAND_PREFIX:promote) uses REDIS_DATABASE_SCHEME variable" {
   password="$(sudo cat "$PLUGIN_DATA_ROOT/l/PASSWORD")"
-  dokku config:set my_app "REDIS_DATABASE_SCHEME=redis2" "REDIS_URL=redis://u:p@host:6379" "DOKKU_REDIS_BLUE_URL=redis2://l:$password@dokku-redis-l:6379"
+  dokku config:set my_app "REDIS_DATABASE_SCHEME=redis2" "REDIS_URL=redis://:p@host:6379" "DOKKU_REDIS_BLUE_URL=redis2://:$password@dokku-redis-l:6379"
   dokku "$PLUGIN_COMMAND_PREFIX:promote" l my_app
   url=$(dokku config:get my_app REDIS_URL)
-  assert_equal "$url" "redis2://l:$password@dokku-redis-l:6379"
+  assert_equal "$url" "redis2://:$password@dokku-redis-l:6379"
 }

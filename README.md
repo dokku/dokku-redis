@@ -203,7 +203,7 @@ DOKKU_REDIS_LOLIPOP_PORT_6379_TCP_ADDR=172.17.0.1
 The following will be set on the linked application by default:
 
 ```
-REDIS_URL=redis://lolipop:SOME_PASSWORD@dokku-redis-lolipop:6379/lolipop
+REDIS_URL=redis://:SOME_PASSWORD@dokku-redis-lolipop:6379/lolipop
 ```
 
 The host exposed here only works internally in docker containers. If you want your container to be reachable from outside, you should use the 'expose' subcommand. Another service can be linked to your app:
@@ -222,7 +222,7 @@ dokku redis:link lolipop playground
 This will cause `REDIS_URL` to be set as:
 
 ```
-redis2://lolipop:SOME_PASSWORD@dokku-redis-lolipop:6379/lolipop
+redis2://:SOME_PASSWORD@dokku-redis-lolipop:6379/lolipop
 ```
 
 ### unlink the redis service from the app
@@ -312,7 +312,7 @@ dokku redis:promote <service> <app>
 If you have a redis service linked to an app and try to link another redis service another link environment variable will be generated automatically:
 
 ```
-DOKKU_REDIS_BLUE_URL=redis://other_service:ANOTHER_PASSWORD@dokku-redis-other-service:6379/other_service
+DOKKU_REDIS_BLUE_URL=redis://:ANOTHER_PASSWORD@dokku-redis-other-service:6379/other_service
 ```
 
 You can promote the new service to be the primary one:
@@ -326,9 +326,9 @@ dokku redis:promote other_service playground
 This will replace `REDIS_URL` with the url from other_service and generate another environment variable to hold the previous value if necessary. You could end up with the following for example:
 
 ```
-REDIS_URL=redis://other_service:ANOTHER_PASSWORD@dokku-redis-other-service:6379/other_service
-DOKKU_REDIS_BLUE_URL=redis://other_service:ANOTHER_PASSWORD@dokku-redis-other-service:6379/other_service
-DOKKU_REDIS_SILVER_URL=redis://lolipop:SOME_PASSWORD@dokku-redis-lolipop:6379/lolipop
+REDIS_URL=redis://:ANOTHER_PASSWORD@dokku-redis-other-service:6379/other_service
+DOKKU_REDIS_BLUE_URL=redis://:ANOTHER_PASSWORD@dokku-redis-other-service:6379/other_service
+DOKKU_REDIS_SILVER_URL=redis://:SOME_PASSWORD@dokku-redis-lolipop:6379/lolipop
 ```
 
 ### start a previously stopped redis service

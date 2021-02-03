@@ -63,7 +63,7 @@ teardown() {
   echo "status: $status"
   url=$(dokku config:get my_app REDIS_URL)
   password="$(sudo cat "$PLUGIN_DATA_ROOT/l/PASSWORD")"
-  assert_contains "$url" "redis://l:$password@dokku-redis-l:6379"
+  assert_contains "$url" "redis://:$password@dokku-redis-l:6379"
   assert_success
   dokku "$PLUGIN_COMMAND_PREFIX:unlink" l my_app
 }
@@ -96,7 +96,7 @@ teardown() {
   dokku "$PLUGIN_COMMAND_PREFIX:link" l my_app
   url=$(dokku config:get my_app REDIS_URL)
   password="$(sudo cat "$PLUGIN_DATA_ROOT/l/PASSWORD")"
-  assert_contains "$url" "redis2://l:$password@dokku-redis-l:6379"
+  assert_contains "$url" "redis2://:$password@dokku-redis-l:6379"
   assert_success
   dokku "$PLUGIN_COMMAND_PREFIX:unlink" l my_app
 }
@@ -113,7 +113,7 @@ teardown() {
   dokku "$PLUGIN_COMMAND_PREFIX:link" l my_app --alias "ALIAS"
   url=$(dokku config:get my_app ALIAS_URL)
   password="$(sudo cat "$PLUGIN_DATA_ROOT/l/PASSWORD")"
-  assert_contains "$url" "redis://l:$password@dokku-redis-l:6379"
+  assert_contains "$url" "redis://:$password@dokku-redis-l:6379"
   assert_success
   dokku "$PLUGIN_COMMAND_PREFIX:unlink" l my_app
 }
