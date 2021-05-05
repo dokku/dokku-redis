@@ -209,7 +209,7 @@ REDIS_URL=redis://:SOME_PASSWORD@dokku-redis-lolipop:6379/lolipop
 The host exposed here only works internally in docker containers. If you want your container to be reachable from outside, you should use the 'expose' subcommand. Another service can be linked to your app:
 
 ```shell
-dokku redis:link other_service playground
+dokku redis:expose <service> <ports...>
 ```
 
 It is possible to change the protocol for `REDIS_URL` by setting the environment variable `REDIS_DATABASE_SCHEME` on the app. Doing so will after linking will cause the plugin to think the service is not linked, and we advise you to unlink before proceeding. 
