@@ -1,6 +1,6 @@
 # dokku redis [![Build Status](https://img.shields.io/circleci/project/github/dokku/dokku-redis.svg?branch=master&style=flat-square "Build Status")](https://circleci.com/gh/dokku/dokku-redis/tree/master) [![IRC Network](https://img.shields.io/badge/irc-freenode-blue.svg?style=flat-square "IRC Freenode")](https://webchat.freenode.net/?channels=dokku)
 
-Official redis plugin for dokku. Currently defaults to installing [redis 5.0.7](https://hub.docker.com/_/redis/).
+Official redis plugin for dokku. Currently defaults to installing [redis 6.2.4](https://hub.docker.com/_/redis/).
 
 ## Requirements
 
