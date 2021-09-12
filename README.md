@@ -33,7 +33,7 @@ redis:destroy <service> [-f|--force]               # delete the redis service/da
 redis:enter <service>                              # enter or run a command in a running redis service container
 redis:exists <service>                             # check if the redis service exists
 redis:export <service>                             # export a dump of the redis service database
-redis:expose <service> <ports...>                  # expose a redis service on custom port if provided (random port otherwise)
+redis:expose <service> <ports...>                  # expose a redis service on custom host:port if provided (random port on the 0.0.0.0 interface if otherwise unspecified)
 redis:import <service>                             # import a dump into the redis service database
 redis:info <service> [--single-info-flag]          # print the service information
 redis:link <service> <app> [--link-flags...]       # link the redis service to the app
@@ -276,7 +276,7 @@ You may also run a command directly against the service. Filesystem changes will
 dokku redis:enter lolipop touch /tmp/test
 ```
 
-### expose a redis service on custom port if provided (random port otherwise)
+### expose a redis service on custom host:port if provided (random port on the 0.0.0.0 interface if otherwise unspecified)
 
 ```shell
 # usage
@@ -287,6 +287,12 @@ Expose the service on the service's normal ports, allowing access to it from the
 
 ```shell
 dokku redis:expose lolipop 6379
+```
+
+Expose the service on the service's normal ports, with the first on a specified ip adddress (127.0.0.1):
+
+```shell
+dokku redis:expose lolipop 127.0.0.1:6379
 ```
 
 ### unexpose a previously exposed redis service
