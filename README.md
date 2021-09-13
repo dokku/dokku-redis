@@ -18,14 +18,14 @@ sudo dokku plugin:install https://github.com/dokku/dokku-redis.git redis
 
 ```
 redis:app-links <app>                              # list all redis service links for a given app
-redis:backup <service> <bucket-name> [--use-iam]   # creates a backup of the redis service to an existing s3 bucket
-redis:backup-auth <service> <aws-access-key-id> <aws-secret-access-key> <aws-default-region> <aws-signature-version> <endpoint-url> # sets up authentication for backups on the redis service
-redis:backup-deauth <service>                      # removes backup authentication for the redis service
-redis:backup-schedule <service> <schedule> <bucket-name> [--use-iam] # schedules a backup of the redis service
+redis:backup <service> <bucket-name> [--use-iam]   # create a backup of the redis service to an existing s3 bucket
+redis:backup-auth <service> <aws-access-key-id> <aws-secret-access-key> <aws-default-region> <aws-signature-version> <endpoint-url> # set up authentication for backups on the redis service
+redis:backup-deauth <service>                      # remove backup authentication for the redis service
+redis:backup-schedule <service> <schedule> <bucket-name> [--use-iam] # schedule a backup of the redis service
 redis:backup-schedule-cat <service>                # cat the contents of the configured backup cronfile for the service
-redis:backup-set-encryption <service> <passphrase> # sets encryption for all future backups of redis service
-redis:backup-unschedule <service>                  # unschedules the backup of the redis service
-redis:backup-unset-encryption <service>            # unsets encryption for future backups of the redis service
+redis:backup-set-encryption <service> <passphrase> # set encryption for all future backups of redis service
+redis:backup-unschedule <service>                  # unschedule the backup of the redis service
+redis:backup-unset-encryption <service>            # unset encryption for future backups of the redis service
 redis:clone <service> <new-service> [--clone-flags...] # create container <new-name> then copy data from <name> into <new-name>
 redis:connect <service>                            # connect to the service via the redis connection tool
 redis:create <service> [--create-flags...]         # create a redis service
@@ -522,7 +522,7 @@ You may skip the `backup-auth` step if your dokku install is running within EC2 
 
 Backups can be performed using the backup commands:
 
-### sets up authentication for backups on the redis service
+### set up authentication for backups on the redis service
 
 ```shell
 # usage
@@ -553,7 +553,7 @@ More specific example for minio auth:
 dokku redis:backup-auth lolipop MINIO_ACCESS_KEY_ID MINIO_SECRET_ACCESS_KEY us-east-1 s3v4 https://YOURMINIOSERVICE
 ```
 
-### removes backup authentication for the redis service
+### remove backup authentication for the redis service
 
 ```shell
 # usage
@@ -566,7 +566,7 @@ Remove s3 authentication:
 dokku redis:backup-deauth lolipop
 ```
 
-### creates a backup of the redis service to an existing s3 bucket
+### create a backup of the redis service to an existing s3 bucket
 
 ```shell
 # usage
@@ -589,7 +589,7 @@ Restore a backup file (assuming it was extracted via `tar -xf backup.tgz`):
 dokku redis:import lolipop < backup-folder/export
 ```
 
-### sets encryption for all future backups of redis service
+### set encryption for all future backups of redis service
 
 ```shell
 # usage
@@ -602,7 +602,7 @@ Set the GPG-compatible passphrase for encrypting backups for backups:
 dokku redis:backup-set-encryption lolipop
 ```
 
-### unsets encryption for future backups of the redis service
+### unset encryption for future backups of the redis service
 
 ```shell
 # usage
@@ -615,7 +615,7 @@ Unset the `GPG` encryption passphrase for backups:
 dokku redis:backup-unset-encryption lolipop
 ```
 
-### schedules a backup of the redis service
+### schedule a backup of the redis service
 
 ```shell
 # usage
@@ -653,7 +653,7 @@ Cat the contents of the configured backup cronfile for the service:
 dokku redis:backup-schedule-cat lolipop
 ```
 
-### unschedules the backup of the redis service
+### unschedule the backup of the redis service
 
 ```shell
 # usage
