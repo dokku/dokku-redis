@@ -499,7 +499,7 @@ dokku redis:import <service>
 Import a datastore dump:
 
 ```shell
-dokku redis:import lollipop < database.dump
+dokku redis:import lollipop < data.dump
 ```
 
 ### export a dump of the redis service database
@@ -518,7 +518,7 @@ dokku redis:export lollipop
 You can redirect this output to a file:
 
 ```shell
-dokku redis:export lollipop > lollipop.dump
+dokku redis:export lollipop > data.dump
 ```
 
 ### Backups
