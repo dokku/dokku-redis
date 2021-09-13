@@ -60,17 +60,7 @@ service_create() {
   chmod 640 "$SERVICE_ROOT/PASSWORD"
   sed -i.bak "s/# requirepass.*/requirepass ${PASSWORD}/" "$SERVICE_ROOT/$PLUGIN_CONFIG_SUFFIX/redis.conf" && rm "$SERVICE_ROOT/$PLUGIN_CONFIG_SUFFIX/redis.conf.bak"
 
-  [[ -n "$SERVICE_CUSTOM_ENV" ]] && REDIS_CUSTOM_ENV="$SERVICE_CUSTOM_ENV"
-  if [[ -n $REDIS_CUSTOM_ENV ]]; then
-    echo "$REDIS_CUSTOM_ENV" | tr ';' "\n" >"$SERVICE_ROOT/ENV"
-  else
-    echo "" >"$SERVICE_ROOT/ENV"
-  fi
-
-  if [[ -n "$SERVICE_MEMORY" ]]; then
-    echo "$SERVICE_MEMORY" >"$SERVICE_ROOT/SERVICE_MEMORY"
-  fi
-
+  service_commit_config "$SERVICE"
   write_database_name "$SERVICE"
   plugn trigger service-action post-create "$SERVICE"
   service_create_container "$SERVICE"
@@ -83,13 +73,17 @@ service_create_container() {
   local SERVICE_HOST_ROOT="$PLUGIN_DATA_HOST_ROOT/$SERVICE"
   local SERVICE_NAME="$(get_service_name "$SERVICE")"
 
+  if [[ -f "$SERVICE_ROOT/CONFIG_OPTIONS" ]]; then
+    export CONFIG_OPTIONS="$(cat "$SERVICE_ROOT/CONFIG_OPTIONS")"
+  fi
+
   [[ -f "$SERVICE_ROOT/SERVICE_MEMORY" ]] && SERVICE_MEMORY="$(cat "$SERVICE_ROOT/SERVICE_MEMORY")"
   if [[ -n "$SERVICE_MEMORY" ]]; then
     MEMORY_LIMIT="--memory=${SERVICE_MEMORY}m"
   fi
 
   # shellcheck disable=SC2086
-  ID=$(docker run --name "$SERVICE_NAME" $MEMORY_LIMIT -v "$SERVICE_HOST_ROOT/data:/data" -v "$SERVICE_HOST_ROOT/$PLUGIN_CONFIG_SUFFIX:/usr/local/etc/redis" --env-file="$SERVICE_ROOT/ENV" -d --restart always --label dokku=service --label dokku.service=redis "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" redis-server /usr/local/etc/redis/redis.conf --bind 0.0.0.0)
+  ID=$(docker run --name "$SERVICE_NAME" $MEMORY_LIMIT -v "$SERVICE_HOST_ROOT/data:/data" -v "$SERVICE_HOST_ROOT/$PLUGIN_CONFIG_SUFFIX:/usr/local/etc/redis" --env-file="$SERVICE_ROOT/ENV" -d --restart always --label dokku=service --label dokku.service=redis "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" redis-server /usr/local/etc/redis/redis.conf --bind 0.0.0.0 $CONFIG_OPTIONS)
   echo "$ID" >"$SERVICE_ROOT/ID"
 
   dokku_log_verbose_quiet "Waiting for container to be ready"
