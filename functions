@@ -82,8 +82,13 @@ service_create_container() {
     MEMORY_LIMIT="--memory=${SERVICE_MEMORY}m"
   fi
 
+  [[ -f "$SERVICE_ROOT/SHM_SIZE" ]] && SERVICE_SHM_SIZE="$(cat "$SERVICE_ROOT/SHM_SIZE")"
+  if [[ -n "$SERVICE_SHM_SIZE" ]]; then
+    SHM_SIZE="--shm-size=${SERVICE_SHM_SIZE}"
+  fi
+
   # shellcheck disable=SC2086
-  ID=$(docker run --name "$SERVICE_NAME" $MEMORY_LIMIT -v "$SERVICE_HOST_ROOT/data:/data" -v "$SERVICE_HOST_ROOT/$PLUGIN_CONFIG_SUFFIX:/usr/local/etc/redis" --env-file="$SERVICE_ROOT/ENV" -d --restart always --label dokku=service --label dokku.service=redis "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" redis-server /usr/local/etc/redis/redis.conf --bind 0.0.0.0 $CONFIG_OPTIONS)
+  ID=$(docker run --name "$SERVICE_NAME" $MEMORY_LIMIT $SHM_SIZE -v "$SERVICE_HOST_ROOT/data:/data" -v "$SERVICE_HOST_ROOT/$PLUGIN_CONFIG_SUFFIX:/usr/local/etc/redis" --env-file="$SERVICE_ROOT/ENV" -d --restart always --label dokku=service --label dokku.service=redis "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" redis-server /usr/local/etc/redis/redis.conf --bind 0.0.0.0 $CONFIG_OPTIONS)
   echo "$ID" >"$SERVICE_ROOT/ID"
 
   dokku_log_verbose_quiet "Waiting for container to be ready"
