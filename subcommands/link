@@ -14,16 +14,16 @@ service-link-cmd() {
   #E the following environment variables will be set automatically by docker
   #E (not on the app itself, so they won’t be listed when calling dokku config):
   #E
-  #E     DOKKU_${PLUGIN_DEFAULT_ALIAS}_LOLIPOP_NAME=/lolipop/DATABASE
-  #E     DOKKU_${PLUGIN_DEFAULT_ALIAS}_LOLIPOP_PORT=tcp://172.17.0.1:${PLUGIN_DATASTORE_PORTS[0]}
-  #E     DOKKU_${PLUGIN_DEFAULT_ALIAS}_LOLIPOP_PORT_${PLUGIN_DATASTORE_PORTS[0]}_TCP=tcp://172.17.0.1:${PLUGIN_DATASTORE_PORTS[0]}
-  #E     DOKKU_${PLUGIN_DEFAULT_ALIAS}_LOLIPOP_PORT_${PLUGIN_DATASTORE_PORTS[0]}_TCP_PROTO=tcp
-  #E     DOKKU_${PLUGIN_DEFAULT_ALIAS}_LOLIPOP_PORT_${PLUGIN_DATASTORE_PORTS[0]}_TCP_PORT=${PLUGIN_DATASTORE_PORTS[0]}
-  #E     DOKKU_${PLUGIN_DEFAULT_ALIAS}_LOLIPOP_PORT_${PLUGIN_DATASTORE_PORTS[0]}_TCP_ADDR=172.17.0.1
+  #E     DOKKU_${PLUGIN_VARIABLE}_LOLIPOP_NAME=/lolipop/DATABASE
+  #E     DOKKU_${PLUGIN_VARIABLE}_LOLIPOP_PORT=tcp://172.17.0.1:${PLUGIN_DATASTORE_PORTS[0]}
+  #E     DOKKU_${PLUGIN_VARIABLE}_LOLIPOP_PORT_${PLUGIN_DATASTORE_PORTS[0]}_TCP=tcp://172.17.0.1:${PLUGIN_DATASTORE_PORTS[0]}
+  #E     DOKKU_${PLUGIN_VARIABLE}_LOLIPOP_PORT_${PLUGIN_DATASTORE_PORTS[0]}_TCP_PROTO=tcp
+  #E     DOKKU_${PLUGIN_VARIABLE}_LOLIPOP_PORT_${PLUGIN_DATASTORE_PORTS[0]}_TCP_PORT=${PLUGIN_DATASTORE_PORTS[0]}
+  #E     DOKKU_${PLUGIN_VARIABLE}_LOLIPOP_PORT_${PLUGIN_DATASTORE_PORTS[0]}_TCP_ADDR=172.17.0.1
   #E
   #E the following will be set on the linked application by default:
   #E
-  #E     ${PLUGIN_DEFAULT_ALIAS}_URL=${PLUGIN_SCHEME}://:SOME_PASSWORD@dokku-${PLUGIN_COMMAND_PREFIX}-lolipop:${PLUGIN_DATASTORE_PORTS[0]}/lolipop
+  #E     ${PLUGIN_DEFAULT_ALIAS}_URL=${PLUGIN_SCHEME}://:SOME_PASSWORD@dokku-${PLUGIN_COMMAND_PREFIX}-lolipop:${PLUGIN_DATASTORE_PORTS[0]}
   #E
   #E the host exposed here only works internally in docker containers.
   #E if you want your container to be reachable from outside, you should
@@ -37,7 +37,7 @@ service-link-cmd() {
   #E dokku $PLUGIN_COMMAND_PREFIX:link lolipop playground
   #E this will cause ${PLUGIN_DEFAULT_ALIAS}_URL to be set as:
   #E
-  #E     ${PLUGIN_SCHEME}2://:SOME_PASSWORD@dokku-${PLUGIN_COMMAND_PREFIX}-lolipop:${PLUGIN_DATASTORE_PORTS[0]}/lolipop
+  #E     ${PLUGIN_SCHEME}2://:SOME_PASSWORD@dokku-${PLUGIN_COMMAND_PREFIX}-lolipop:${PLUGIN_DATASTORE_PORTS[0]}
   #A service, service to run command against
   #A app, app to run command against
   #F -a|--alias "BLUE_DATABASE", an alternative alias to use for linking to an app via environment variable
