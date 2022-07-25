@@ -112,8 +112,7 @@ service_export() {
   docker exec "$SERVICE_NAME" bash -c "echo BGSAVE | redis-cli -a ${PASSWORD}" >/dev/null 2>&1
   LASTSAVE2=$(docker exec "$SERVICE_NAME" bash -c "echo LASTSAVE | redis-cli -a ${PASSWORD}")
 
-  until [[ "$LASTSAVE1" != "$LASTSAVE2" ]];
-  do
+  until [[ "$LASTSAVE1" != "$LASTSAVE2" ]]; do
     LASTSAVE2=$(docker exec "$SERVICE_NAME" bash -c "echo LASTSAVE | redis-cli -a ${PASSWORD}")
     sleep 5
   done
