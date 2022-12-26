@@ -41,6 +41,7 @@ redis:linked <service> <app>                       # check if the redis service 
 redis:links <service>                              # list all apps linked to the redis service
 redis:list                                         # list all redis services
 redis:logs <service> [-t|--tail] <tail-num-optional> # print the most recent log(s) for this service
+redis:pause <service>                              # pause a running redis service
 redis:promote <service> <app>                      # promote service <service> as REDIS_URL in <app>
 redis:restart <service>                            # graceful shutdown and restart of the redis service container
 redis:start <service>                              # start a previously stopped redis service
@@ -370,10 +371,23 @@ dokku redis:start lollipop
 dokku redis:stop <service>
 ```
 
-Stop the service and the running container:
+Stop the service and removes the running container:
 
 ```shell
 dokku redis:stop lollipop
+```
+
+### pause a running redis service
+
+```shell
+# usage
+dokku redis:pause <service>
+```
+
+Pause the running container for the service:
+
+```shell
+dokku redis:pause lollipop
 ```
 
 ### graceful shutdown and restart of the redis service container
