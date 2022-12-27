@@ -3,7 +3,8 @@ _DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export REDIS_IMAGE=${REDIS_IMAGE:="$(awk -F '[ :]' '{print $2}' "${_DIR}/Dockerfile")"}
 export REDIS_IMAGE_VERSION=${REDIS_IMAGE_VERSION:="$(awk -F '[ :]' '{print $3}' "${_DIR}/Dockerfile")"}
 export REDIS_ROOT=${REDIS_ROOT:="$DOKKU_LIB_ROOT/services/redis"}
-export REDIS_HOST_ROOT=${REDIS_HOST_ROOT:=$REDIS_ROOT}
+export DOKKU_LIB_HOST_ROOT=${DOKKU_LIB_HOST_ROOT:=$DOKKU_LIB_ROOT}
+export REDIS_HOST_ROOT=${REDIS_HOST_ROOT:="$DOKKU_LIB_HOST_ROOT/services/redis"}
 
 export PLUGIN_UNIMPLEMENTED_SUBCOMMANDS=()
 export PLUGIN_COMMAND_PREFIX="redis"
