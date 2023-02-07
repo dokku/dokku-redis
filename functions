@@ -90,6 +90,12 @@ service_create_container() {
   DOCKER_ARGS+=("--volume=$SERVICE_HOST_ROOT/$PLUGIN_CONFIG_SUFFIX:/usr/local/etc/redis")
   DOCKER_ARGS+=("--volume=$SERVICE_HOST_ROOT/data:/data")
 
+  declare -a LINK_CONTAINER_DOCKER_ARGS
+  LINK_CONTAINER_DOCKER_ARGS=()
+  LINK_CONTAINER_DOCKER_ARGS+=("--rm")
+  LINK_CONTAINER_DOCKER_ARGS+=("--link")
+  LINK_CONTAINER_DOCKER_ARGS+=("$SERVICE_NAME:$PLUGIN_COMMAND_PREFIX")
+
   [[ -f "$SERVICE_ROOT/SERVICE_MEMORY" ]] && SERVICE_MEMORY="$(cat "$SERVICE_ROOT/SERVICE_MEMORY")"
   if [[ -n "$SERVICE_MEMORY" ]]; then
     DOCKER_ARGS+=("--memory=${SERVICE_MEMORY}m")
@@ -106,6 +112,8 @@ service_create_container() {
   local network="$(fn-plugin-property-get "$PLUGIN_COMMAND_PREFIX" "$SERVICE" "initial-network")"
   if [[ -n "$network" ]]; then
     DOCKER_ARGS+=("--network=${network}")
+    DOCKER_ARGS+=("--network-alias=$SERVICE_NAME")
+    LINK_CONTAINER_DOCKER_ARGS+=("--network=${network}")
   fi
 
   # shellcheck disable=SC2086
@@ -113,7 +121,7 @@ service_create_container() {
   echo "$ID" >"$SERVICE_ROOT/ID"
 
   dokku_log_verbose_quiet "Waiting for container to be ready"
-  "$DOCKER_BIN" container run --rm --link "$SERVICE_NAME:$PLUGIN_COMMAND_PREFIX" "$PLUGIN_WAIT_IMAGE" -p "$PLUGIN_DATASTORE_WAIT_PORT" >/dev/null
+  "$DOCKER_BIN" container run "${LINK_CONTAINER_DOCKER_ARGS[@]}" "$PLUGIN_WAIT_IMAGE" -c "$SERVICE_NAME:$PLUGIN_DATASTORE_WAIT_PORT" >/dev/null
 
   dokku_log_info2 "$PLUGIN_SERVICE container created: $SERVICE"
   service_info "$SERVICE"
