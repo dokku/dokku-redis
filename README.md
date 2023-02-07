@@ -44,6 +44,7 @@ redis:logs <service> [-t|--tail] <tail-num-optional> # print the most recent log
 redis:pause <service>                              # pause a running redis service
 redis:promote <service> <app>                      # promote service <service> as REDIS_URL in <app>
 redis:restart <service>                            # graceful shutdown and restart of the redis service container
+redis:set <service> <key> <value>                  # set or clear a property for a service
 redis:start <service>                              # start a previously stopped redis service
 redis:stop <service>                               # stop a running redis service
 redis:unexpose <service>                           # unexpose a previously exposed redis service
@@ -248,6 +249,25 @@ You can unlink a redis service:
 
 ```shell
 dokku redis:unlink lollipop playground
+```
+
+### set or clear a property for a service
+
+```shell
+# usage
+dokku redis:set <service> <key> <value>
+```
+
+Set the network to attach after the service container is started:
+
+```shell
+dokku redis:set lollipop post-create-network custom-network
+```
+
+Unset the post-create-network value:
+
+```shell
+dokku redis:set lollipop post-create-network
 ```
 
 ### Service Lifecycle
