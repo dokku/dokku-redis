@@ -3,8 +3,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/config"
 set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common-functions"
-source "$PLUGIN_BASE_PATH/common/functions"
-source "$PLUGIN_BASE_PATH/common/property-functions"
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
 source "$PLUGIN_AVAILABLE_PATH/config/functions"
 if [[ -f "$PLUGIN_AVAILABLE_PATH/docker-options/functions" ]]; then
   source "$PLUGIN_AVAILABLE_PATH/docker-options/functions"
@@ -137,7 +137,12 @@ service_create_container() {
   fi
 
   dokku_log_verbose_quiet "Waiting for container to be ready"
-  "$DOCKER_BIN" container run "${LINK_CONTAINER_DOCKER_ARGS[@]}" "$PLUGIN_WAIT_IMAGE" -c "$SERVICE_NAME:$PLUGIN_DATASTORE_WAIT_PORT" >/dev/null
+  if ! suppress_output "$DOCKER_BIN" container run "${LINK_CONTAINER_DOCKER_ARGS[@]}" "$PLUGIN_WAIT_IMAGE" -c "$SERVICE_NAME:$PLUGIN_DATASTORE_WAIT_PORT"; then
+    dokku_log_info2_quiet "Start of $SERVICE container output"
+    dokku_container_log_verbose_quiet "$SERVICE_NAME"
+    dokku_log_info2_quiet "End of $SERVICE container output"
+    return 1
+  fi
 
   dokku_log_info2 "$PLUGIN_SERVICE container created: $SERVICE"
   service_info "$SERVICE"
@@ -174,7 +179,9 @@ service_import() {
     dokku_log_fail "No data provided on stdin."
   fi
   suppress_output service_container_rm "$SERVICE"
-  "$DOCKER_BIN" container run --rm -i -v "$SERVICE_HOST_ROOT/data:/data" "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" bash -c "cat > /data/dump.rdb && chown redis: /data/dump.rdb"
+  "$DOCKER_BIN" container run --rm -v "$SERVICE_HOST_ROOT/data:/data" "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" bash -c "rm -f /data/dump.rdb"
+  cat > "$SERVICE_HOST_ROOT/data/dump.rdb"
+  "$DOCKER_BIN" container run --rm -v "$SERVICE_HOST_ROOT/data:/data" "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" bash -c "chown redis: /data/dump.rdb"
   suppress_output service_start "$SERVICE"
 }
 
