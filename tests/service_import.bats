@@ -7,7 +7,6 @@ setup() {
 }
 
 teardown() {
-  dokku trace:off
   dokku --force "$PLUGIN_COMMAND_PREFIX:destroy" l
   rm -f "/tmp/fake.rdb"
 }
@@ -34,8 +33,7 @@ teardown() {
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:import) success" {
-  dokku trace:on
-  run dokku "$PLUGIN_COMMAND_PREFIX:import" l <"/tmp/fake.rdb"
+  run dokku --trace "$PLUGIN_COMMAND_PREFIX:import" l <"/tmp/fake.rdb"
   echo "output: $output"
   echo "status: $status"
   assert_success
