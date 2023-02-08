@@ -179,6 +179,7 @@ service_import() {
     dokku_log_fail "No data provided on stdin."
   fi
   suppress_output service_container_rm "$SERVICE"
+  "$DOCKER_BIN" container run --rm -v "$SERVICE_HOST_ROOT/data:/data" "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" bash -c "rm -f /data/dump.rdb"
   cat > "$SERVICE_HOST_ROOT/data/dump.rdb"
   "$DOCKER_BIN" container run --rm -v "$SERVICE_HOST_ROOT/data:/data" "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" bash -c "chown redis: /data/dump.rdb"
   suppress_output service_start "$SERVICE"
