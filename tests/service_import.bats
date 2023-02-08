@@ -3,7 +3,7 @@ load test_helper
 
 setup() {
   dokku "$PLUGIN_COMMAND_PREFIX:create" l
-  echo "data" | tee "/tmp/fake.rdb"
+  curl -o "/tmp/fake.rdb" https://raw.githubusercontent.com/sripathikrishnan/redis-rdb-tools/master/tests/dumps/dictionary.rdb
 }
 
 teardown() {
