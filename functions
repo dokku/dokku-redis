@@ -91,8 +91,6 @@ service_create_container() {
   DOCKER_ARGS+=("--volume=$SERVICE_HOST_ROOT/$PLUGIN_CONFIG_SUFFIX:/usr/local/etc/redis")
   DOCKER_ARGS+=("--volume=$SERVICE_HOST_ROOT/data:/data")
 
-  ls -lah $SERVICE_ROOT/ENV $SERVICE_HOST_ROOT/config $SERVICE_HOST_ROOT/data
-
   declare -a LINK_CONTAINER_DOCKER_ARGS
   LINK_CONTAINER_DOCKER_ARGS=()
   LINK_CONTAINER_DOCKER_ARGS+=("--rm")
