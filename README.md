@@ -44,6 +44,7 @@ redis:logs <service> [-t|--tail] <tail-num-optional> # print the most recent log
 redis:pause <service>                              # pause a running redis service
 redis:promote <service> <app>                      # promote service <service> as REDIS_URL in <app>
 redis:restart <service>                            # graceful shutdown and restart of the redis service container
+redis:set <service> <key> <value>                  # set or clear a property for a service
 redis:start <service>                              # start a previously stopped redis service
 redis:stop <service>                               # stop a running redis service
 redis:unexpose <service>                           # unexpose a previously exposed redis service
@@ -111,7 +112,10 @@ flags:
 - `--exposed-ports`: show service exposed ports
 - `--id`: show the service container id
 - `--internal-ip`: show the service internal ip
+- `--initial-network`: show the initial network being connected to
 - `--links`: show the service app links
+- `--post-create-network`: show the networks to attach to after service container creation
+- `--post-start-network`: show the networks to attach to after service container start
 - `--service-root`: show the service root directory
 - `--status`: show the service running status
 - `--version`: show the service image version
@@ -131,7 +135,10 @@ dokku redis:info lollipop --dsn
 dokku redis:info lollipop --exposed-ports
 dokku redis:info lollipop --id
 dokku redis:info lollipop --internal-ip
+dokku redis:info lollipop --initial-network
 dokku redis:info lollipop --links
+dokku redis:info lollipop --post-create-network
+dokku redis:info lollipop --post-start-network
 dokku redis:info lollipop --service-root
 dokku redis:info lollipop --status
 dokku redis:info lollipop --version
@@ -248,6 +255,31 @@ You can unlink a redis service:
 
 ```shell
 dokku redis:unlink lollipop playground
+```
+
+### set or clear a property for a service
+
+```shell
+# usage
+dokku redis:set <service> <key> <value>
+```
+
+Set the network to attach after the service container is started:
+
+```shell
+dokku redis:set lollipop post-create-network custom-network
+```
+
+Set multiple networks:
+
+```shell
+dokku redis:set lollipop post-create-network custom-network,other-network
+```
+
+Unset the post-create-network value:
+
+```shell
+dokku redis:set lollipop post-create-network
 ```
 
 ### Service Lifecycle
