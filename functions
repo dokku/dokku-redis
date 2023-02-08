@@ -173,9 +173,9 @@ service_import() {
   if [[ -t 0 ]]; then
     dokku_log_fail "No data provided on stdin."
   fi
-  dokku "$PLUGIN_COMMAND_PREFIX:stop" "$SERVICE" >/dev/null 2>&1
+  service_container_rm "$SERVICE"
   "$DOCKER_BIN" container run --rm -i -v "$SERVICE_HOST_ROOT/data:/data" "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" bash -c "cat > /data/dump.rdb && chown redis: /data/dump.rdb"
-  dokku "$PLUGIN_COMMAND_PREFIX:start" "$SERVICE" >/dev/null 2>&1
+  service_start "$SERVICE"
 }
 
 service_start() {
