@@ -23,7 +23,7 @@ service-link-cmd() {
   #E
   #E the following will be set on the linked application by default:
   #E
-  #E     ${PLUGIN_DEFAULT_ALIAS}_URL=${PLUGIN_SCHEME}://lollipop:SOME_PASSWORD@dokku-${PLUGIN_COMMAND_PREFIX}-lollipop:${PLUGIN_DATASTORE_PORTS[0]}/lollipop
+  #E     ${PLUGIN_DEFAULT_ALIAS}_URL=${PLUGIN_SCHEME}://:SOME_PASSWORD@dokku-${PLUGIN_COMMAND_PREFIX}-lollipop:${PLUGIN_DATASTORE_PORTS[0]}
   #E
   #E the host exposed here only works internally in docker containers.
   #E if you want your container to be reachable from outside, you should
@@ -37,11 +37,7 @@ service-link-cmd() {
   #E dokku $PLUGIN_COMMAND_PREFIX:link lollipop playground
   #E this will cause ${PLUGIN_DEFAULT_ALIAS}_URL to be set as:
   #E
-  #E     ${PLUGIN_SCHEME}2://lollipop:SOME_PASSWORD@dokku-${PLUGIN_COMMAND_PREFIX}-lollipop:${PLUGIN_DATASTORE_PORTS[0]}/lollipop
-  #E
-  #E If you specify ${PLUGIN_VARIABLE}_DATABASE_SCHEME to equal `http`, we'll also automatically adjust ${PLUGIN_DEFAULT_ALIAS}_URL to match the http interface:
-  #E
-  #E     http://lollipop:SOME_PASSWORD@dokku-${PLUGIN_COMMAND_PREFIX}-lollipop:${PLUGIN_DATASTORE_PORTS[1]}
+  #E     ${PLUGIN_SCHEME}2://:SOME_PASSWORD@dokku-${PLUGIN_COMMAND_PREFIX}-lollipop:${PLUGIN_DATASTORE_PORTS[0]}
   #A service, service to run command against
   #A app, app to run command against
   #F -a|--alias "BLUE_DATABASE", an alternative alias to use for linking to an app via environment variable

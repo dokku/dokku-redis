@@ -224,7 +224,7 @@ DOKKU_REDIS_LOLLIPOP_PORT_6379_TCP_ADDR=172.17.0.1
 The following will be set on the linked application by default:
 
 ```
-REDIS_URL=redis://lollipop:SOME_PASSWORD@dokku-redis-lollipop:6379/lollipop
+REDIS_URL=redis://:SOME_PASSWORD@dokku-redis-lollipop:6379
 ```
 
 The host exposed here only works internally in docker containers. If you want your container to be reachable from outside, you should use the `expose` subcommand. Another service can be linked to your app:
@@ -243,13 +243,7 @@ dokku redis:link lollipop playground
 This will cause `REDIS_URL` to be set as:
 
 ```
-redis2://lollipop:SOME_PASSWORD@dokku-redis-lollipop:6379/lollipop
-```
-
-If you specify `REDIS_DATABASE_SCHEME` to equal `http`, we`ll also automatically adjust `REDIS_URL` to match the http interface:
-
-```
-http://lollipop:SOME_PASSWORD@dokku-redis-lollipop:${PLUGIN_DATASTORE_PORTS[1]}
+redis2://:SOME_PASSWORD@dokku-redis-lollipop:6379
 ```
 
 ### unlink the redis service from the app
