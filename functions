@@ -130,6 +130,8 @@ service_create_container() {
     done < <(fn-plugin-property-get "$PLUGIN_COMMAND_PREFIX" "$SERVICE" "post-create-network" | tr "," "\n")
   fi
   suppress_output "$DOCKER_BIN" container start "$(cat "$SERVICE_ROOT/ID")"
+  service_port_reconcile_status "$SERVICE"
+
   if [[ -n "$(fn-plugin-property-get "$PLUGIN_COMMAND_PREFIX" "$SERVICE" "post-start-network")" ]]; then
     dokku_log_verbose_quiet "Connecting to networks after container start"
     while read -r line || [[ -n "$line" ]]; do
@@ -182,7 +184,7 @@ service_import() {
   fi
   suppress_output service_container_rm "$SERVICE"
   "$DOCKER_BIN" container run --rm -v "$SERVICE_HOST_ROOT/data:/data" "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" bash -c "rm -f /data/dump.rdb"
-  cat > "$SERVICE_HOST_ROOT/data/dump.rdb"
+  cat >"$SERVICE_HOST_ROOT/data/dump.rdb"
   "$DOCKER_BIN" container run --rm -v "$SERVICE_HOST_ROOT/data:/data" "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" bash -c "chown redis: /data/dump.rdb"
   suppress_output service_start "$SERVICE"
 }
@@ -207,7 +209,7 @@ service_start() {
 
   if [[ -n $PREVIOUS_ID ]]; then
     "$DOCKER_BIN" container start "$PREVIOUS_ID" >/dev/null
-    service_port_unpause "$SERVICE"
+    service_port_reconcile_status "$SERVICE"
     dokku_log_info2 "Container started"
   elif service_image_exists "$SERVICE"; then
     service_create_container "$SERVICE"
