@@ -48,7 +48,7 @@ service_create() {
   touch "$LINKS_FILE"
 
   if [[ -z $REDIS_CONFIG_PATH ]]; then
-    VERSION=$("$DOCKER_BIN"  run --rm --entrypoint redis-server "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" --version | grep -o 'v=\d*\.\d*\.\d*')
+    VERSION=$("$DOCKER_BIN" run --rm --entrypoint redis-server "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" --version | grep -oP 'v=\d+\.\d+\.\d+')
     if [[ -z "$VERSION" ]]; then
       dokku_log_fail "Could not get version information from $PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION image"
     fi
