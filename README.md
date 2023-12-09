@@ -93,7 +93,7 @@ export REDIS_IMAGE_VERSION="${PLUGIN_IMAGE_VERSION}"
 dokku redis:create lollipop
 ```
 
-You can also specify custom environment variables to start the redis service in semi-colon separated form.
+You can also specify custom environment variables to start the redis service in semicolon-separated form.
 
 ```shell
 export REDIS_CUSTOM_ENV="USER=alpha;HOST=beta"
