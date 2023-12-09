@@ -74,9 +74,9 @@ flags:
 - `-m|--memory MEMORY`: container memory limit in megabytes (default: unlimited)
 - `-N|--initial-network INITIAL_NETWORK`: the initial network to attach the service to
 - `-p|--password PASSWORD`: override the user-level service password
-- `-P|--post-create-network NETWORKS`: a comman-separated list of networks to attach the service container to after service creation
+- `-P|--post-create-network NETWORKS`: a comma-separated list of networks to attach the service container to after service creation
 - `-r|--root-password PASSWORD`: override the root-level service password
-- `-S|--post-start-network NETWORKS`: a comman-separated list of networks to attach the service container to after service start
+- `-S|--post-start-network NETWORKS`: a comma-separated list of networks to attach the service container to after service start
 - `-s|--shm-size SHM_SIZE`: override shared memory size for redis docker container
 
 Create a redis service named lollipop:
@@ -85,7 +85,7 @@ Create a redis service named lollipop:
 dokku redis:create lollipop
 ```
 
-You can also specify the image and image version to use for the service. It *must* be compatible with the redis image.
+You can also specify the image and image version to use for the service. It _must_ be compatible with the redis image.
 
 ```shell
 export REDIS_IMAGE="redis"
@@ -151,7 +151,7 @@ dokku redis:info lollipop --version
 
 ```shell
 # usage
-dokku redis:list 
+dokku redis:list
 ```
 
 List all services:
@@ -457,9 +457,9 @@ flags:
 - `-i|--image IMAGE`: the image name to start the service with
 - `-I|--image-version IMAGE_VERSION`: the image version to start the service with
 - `-N|--initial-network INITIAL_NETWORK`: the initial network to attach the service to
-- `-P|--post-create-network NETWORKS`: a comman-separated list of networks to attach the service container to after service creation
+- `-P|--post-create-network NETWORKS`: a comma-separated list of networks to attach the service container to after service creation
 - `-R|--restart-apps "true"`: whether or not to force an app restart (default: false)
-- `-S|--post-start-network NETWORKS`: a comman-separated list of networks to attach the service container to after service start
+- `-S|--post-start-network NETWORKS`: a comma-separated list of networks to attach the service container to after service start
 - `-s|--shm-size SHM_SIZE`: override shared memory size for redis docker container
 
 You can upgrade an existing service to a new image or image-version:
@@ -501,9 +501,9 @@ flags:
 - `-m|--memory MEMORY`: container memory limit in megabytes (default: unlimited)
 - `-N|--initial-network INITIAL_NETWORK`: the initial network to attach the service to
 - `-p|--password PASSWORD`: override the user-level service password
-- `-P|--post-create-network NETWORKS`: a comman-separated list of networks to attach the service container to after service creation
+- `-P|--post-create-network NETWORKS`: a comma-separated list of networks to attach the service container to after service creation
 - `-r|--root-password PASSWORD`: override the root-level service password
-- `-S|--post-start-network NETWORKS`: a comman-separated list of networks to attach the service container to after service start
+- `-S|--post-start-network NETWORKS`: a comma-separated list of networks to attach the service container to after service start
 - `-s|--shm-size SHM_SIZE`: override shared memory size for redis docker container
 
 You can clone an existing service to a new one:
@@ -701,7 +701,7 @@ flags:
 
 Schedule a backup:
 
-> 'schedule' is a crontab expression, eg. "0 3 * * *" for each day at 3am
+> 'schedule' is a crontab expression, eg. "0 3 \* \* \*" for each day at 3am
 
 ```shell
 dokku redis:backup-schedule lollipop "0 3 * * *" my-s3-bucket
