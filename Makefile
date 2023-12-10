@@ -23,9 +23,9 @@ ifeq ($(SYSTEM_NAME),darwin)
 	brew install shellcheck
 else
 ifeq ($(ARCH),arm64)
-	sudo add-apt-repository 'deb http://ports.ubuntu.com/ubuntu-ports focal-backports main restricted universe multiverse'
+  sudo add-apt-repository 'deb http://ports.ubuntu.com/ubuntu-ports jammy-backports main restricted universe multiverse'
 else
-	sudo add-apt-repository 'deb http://archive.ubuntu.com/ubuntu trusty-backports main restricted universe multiverse'
+  sudo add-apt-repository 'deb http://archive.ubuntu.com/ubuntu jammy-backports main restricted universe multiverse'
 endif
 	sudo rm -rf /var/lib/apt/lists/* && sudo apt-get clean
 	sudo apt-get update -qq && sudo apt-get install -qq -y shellcheck
