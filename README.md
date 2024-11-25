@@ -24,8 +24,10 @@ redis:backup-deauth <service>                      # remove backup authenticatio
 redis:backup-schedule <service> <schedule> <bucket-name> [--use-iam] # schedule a backup of the redis service
 redis:backup-schedule-cat <service>                # cat the contents of the configured backup cronfile for the service
 redis:backup-set-encryption <service> <passphrase> # set encryption for all future backups of redis service
+redis:backup-set-public-key-encryption <service> <public-key-id> # set GPG Public Key encryption for all future backups of redis service
 redis:backup-unschedule <service>                  # unschedule the backup of the redis service
 redis:backup-unset-encryption <service>            # unset encryption for future backups of the redis service
+redis:backup-unset-public-key-encryption <service> # unset GPG Public Key encryption for future backups of the redis service
 redis:clone <service> <new-service> [--clone-flags...] # create container <new-name> then copy data from <name> into <new-name>
 redis:connect <service>                            # connect to the service via the redis connection tool
 redis:create <service> [--create-flags...]         # create a redis service
@@ -675,6 +677,19 @@ Set the GPG-compatible passphrase for encrypting backups for backups:
 dokku redis:backup-set-encryption lollipop
 ```
 
+### set GPG Public Key encryption for all future backups of redis service
+
+```shell
+# usage
+dokku redis:backup-set-public-key-encryption <service> <public-key-id>
+```
+
+Set the `GPG` Public Key for encrypting backups:
+
+```shell
+dokku redis:backup-set-public-key-encryption lollipop
+```
+
 ### unset encryption for future backups of the redis service
 
 ```shell
@@ -686,6 +701,19 @@ Unset the `GPG` encryption passphrase for backups:
 
 ```shell
 dokku redis:backup-unset-encryption lollipop
+```
+
+### unset GPG Public Key encryption for future backups of the redis service
+
+```shell
+# usage
+dokku redis:backup-unset-public-key-encryption <service>
+```
+
+Unset the `GPG` Public Key encryption for backups:
+
+```shell
+dokku redis:backup-unset-public-key-encryption lollipop
 ```
 
 ### schedule a backup of the redis service
