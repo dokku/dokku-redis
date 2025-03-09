@@ -11,7 +11,7 @@ Official redis plugin for dokku. Currently defaults to installing [redis 7.4.2](
 
 ```shell
 # on 0.19.x+
-sudo dokku plugin:install https://github.com/dokku/dokku-redis.git redis
+sudo dokku plugin:install https://github.com/dokku/dokku-redis.git --name redis
 ```
 
 ## Commands
