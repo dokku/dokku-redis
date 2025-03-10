@@ -623,7 +623,7 @@ service_link() {
   local SERVICE_NAME="$(get_service_name "$SERVICE")"
   local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
   local EXISTING_CONFIG=$(config_all "$APP")
-  local LINK=$(echo "$EXISTING_CONFIG" | grep "$SERVICE_URL" | cut -d: -f1) || true
+  local LINK=$(echo "$EXISTING_CONFIG" | grep "^$SERVICE_URL\$" | cut -d: -f1) || true
   local SERVICE_DNS_HOSTNAME=$(service_dns_hostname "$SERVICE")
   local LINKS_FILE="$SERVICE_ROOT/LINKS"
   local ALIAS="$PLUGIN_DEFAULT_ALIAS"
@@ -631,17 +631,17 @@ service_link() {
 
   if [[ -n "$SERVICE_ALIAS" ]]; then
     ALIAS="$SERVICE_ALIAS"
-    ALIAS_IN_USE=$(echo "$EXISTING_CONFIG" | grep "${ALIAS}_URL") || true
+    ALIAS_IN_USE=$(config_keys "$APP" | tr ' ' '\n' | grep "^${ALIAS}_URL\$") || true
     [[ -n "$ALIAS_IN_USE" ]] && dokku_log_fail "Specified alias $ALIAS already in use"
   else
-    DEFAULT_ALIAS=$(echo "$EXISTING_CONFIG" | grep "${PLUGIN_DEFAULT_ALIAS}_URL") || true
+    DEFAULT_ALIAS=$(config_keys "$APP" | tr ' ' '\n' | grep "^${ALIAS}_URL\$") || true
     if [[ -n "$DEFAULT_ALIAS" ]]; then
       ALIAS=$(service_alternative_alias "$EXISTING_CONFIG")
     fi
     [[ -z "$ALIAS" ]] && dokku_log_fail "Unable to use default or generated URL alias"
   fi
 
-  [[ -n $LINK ]] && dokku_log_fail "Already linked as $LINK"
+  [[ -n $LINK ]] && [[ -n $SERVICE_ALIAS ]] && dokku_log_fail "Already linked as $LINK"
   plugn trigger service-action pre-link "$PLUGIN_COMMAND_PREFIX" "$SERVICE" "$APP"
   add_to_links_file "$SERVICE" "$APP"
 
