@@ -48,7 +48,7 @@ service_create() {
   touch "$LINKS_FILE"
 
   if [[ -z $REDIS_CONFIG_PATH ]]; then
-    curl -sSL "https://raw.githubusercontent.com/antirez/redis/${PLUGIN_IMAGE_VERSION:0:3}/redis.conf" >"$SERVICE_ROOT/$PLUGIN_CONFIG_SUFFIX/redis.conf" || dokku_log_fail "Unable to download the default redis.conf to the config directory"
+    curl -sSL "https://raw.githubusercontent.com/redis/redis/${PLUGIN_IMAGE_VERSION:0:3}/redis.conf" >"$SERVICE_ROOT/$PLUGIN_CONFIG_SUFFIX/redis.conf" || dokku_log_fail "Unable to download the default redis.conf to the config directory"
   else
     cp "$REDIS_CONFIG_PATH" "$SERVICE_ROOT/$PLUGIN_CONFIG_SUFFIX/redis.conf" || dokku_log_fail "Unable to copy the ${REDIS_CONFIG_PATH} to the config directory"
   fi
