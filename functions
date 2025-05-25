@@ -47,10 +47,12 @@ service_create() {
   mkdir -p "$SERVICE_ROOT/$PLUGIN_CONFIG_SUFFIX" || dokku_log_fail "Unable to create service config directory"
   touch "$LINKS_FILE"
 
+  REDIS_SERVICE_CONFIG="$SERVICE_ROOT/$PLUGIN_CONFIG_SUFFIX/redis.conf"
+
   if [[ -z $REDIS_CONFIG_PATH ]]; then
-    curl -sSLf "https://raw.githubusercontent.com/redis/redis/${PLUGIN_IMAGE_VERSION:0:3}/redis.conf" >"$SERVICE_ROOT/$PLUGIN_CONFIG_SUFFIX/redis.conf" || dokku_log_fail "Unable to download the default redis.conf to the config directory"
+    echo "# requirepass" > $REDIS_SERVICE_CONFIG
   else
-    cp "$REDIS_CONFIG_PATH" "$SERVICE_ROOT/$PLUGIN_CONFIG_SUFFIX/redis.conf" || dokku_log_fail "Unable to copy the ${REDIS_CONFIG_PATH} to the config directory"
+    cp "$REDIS_CONFIG_PATH" "$REDIS_SERVICE_CONFIG" || dokku_log_fail "Unable to copy the ${REDIS_CONFIG_PATH} to the config directory"
   fi
   PASSWORD=$(openssl rand -hex 32)
   if [[ -n "$SERVICE_PASSWORD" ]]; then
@@ -59,7 +61,7 @@ service_create() {
   fi
   echo "$PASSWORD" >"$SERVICE_ROOT/PASSWORD"
   chmod 640 "$SERVICE_ROOT/PASSWORD"
-  sed -i.bak "s/# requirepass.*/requirepass ${PASSWORD}/" "$SERVICE_ROOT/$PLUGIN_CONFIG_SUFFIX/redis.conf" && rm "$SERVICE_ROOT/$PLUGIN_CONFIG_SUFFIX/redis.conf.bak"
+  sed -i.bak "s/# requirepass.*/requirepass ${PASSWORD}/" "$REDIS_SERVICE_CONFIG" && rm "$SERVICE_ROOT/$PLUGIN_CONFIG_SUFFIX/redis.conf.bak"
 
   service_commit_config "$SERVICE"
   write_database_name "$SERVICE"
