@@ -14,6 +14,16 @@ teardown() {
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:hook:pre-delete) removes app from links file when destroying app" {
+  run ls -lah "$PLUGIN_DATA_ROOT"
+  echo "output: $output"
+  echo "status: $status"
+  assert_success
+
+  run ls -lah "$PLUGIN_DATA_ROOT/ls"
+  echo "output: $output"
+  echo "status: $status"
+  assert_success
+
   [[ -n $(<"$PLUGIN_DATA_ROOT/ls/LINKS") ]]
   dokku --force apps:destroy my-app
   [[ -z $(<"$PLUGIN_DATA_ROOT/ls/LINKS") ]]
