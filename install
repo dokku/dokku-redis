@@ -54,7 +54,6 @@ EOL
     ARCHITECTURE="arm64"
   fi
 
-  local DOKKU_DATASTORE_VERSION="${DOKKU_DATASTORE_VERSION:-0.1.0}"
   local DOKKU_DATASTORE_URL="https://github.com/dokku/dokku-datastore/releases/download/${DOKKU_DATASTORE_VERSION}/dokku-datastore-linux-${ARCHITECTURE}"
   if [[ ! -f "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore-${DOKKU_DATASTORE_VERSION}" ]]; then
     dokku_log_info1_quiet "Installing dokku-datastore@${DOKKU_DATASTORE_VERSION}"
