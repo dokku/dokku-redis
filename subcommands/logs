@@ -19,9 +19,7 @@ service-logs-cmd() {
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare SERVICE="$1" TAIL_FLAG="$2" TAIL_NUM_OPTIONAL="${3:-all}"
 
-  [[ -z "$SERVICE" ]] && dokku_log_fail "Please specify a valid name for the service"
-  verify_service_name "$SERVICE"
-  service_logs "$SERVICE" "$TAIL_FLAG" "$TAIL_NUM_OPTIONAL"
+  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" logs "$@"
 }
 
 service-logs-cmd "$@"
