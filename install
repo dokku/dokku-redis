@@ -25,11 +25,14 @@ plugin-install() {
   pull-docker-image "$PLUGIN_S3BACKUP_IMAGE"
   pull-docker-image "$PLUGIN_WAIT_IMAGE"
 
-  mkdir -p "$PLUGIN_DATA_ROOT" || echo "Failed to create $PLUGIN_SERVICE data directory"
+  mkdir -p "$PLUGIN_DATA_ROOT" || echo "Failed to create $PLUGIN_SERVICE service data directory"
   chown "${DOKKU_SYSTEM_USER}:${DOKKU_SYSTEM_GROUP}" "$PLUGIN_DATA_ROOT"
 
-  mkdir -p "$PLUGIN_CONFIG_ROOT" || echo "Failed to create $PLUGIN_SERVICE config directory"
+  mkdir -p "$PLUGIN_CONFIG_ROOT" || echo "Failed to create $PLUGIN_SERVICE plugin config directory"
   chown "${DOKKU_SYSTEM_USER}:${DOKKU_SYSTEM_GROUP}" "$PLUGIN_CONFIG_ROOT"
+
+  mkdir -p "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}" || echo "Failed to create ${PLUGIN_COMMAND_PREFIX} plugin data directory"
+  chown -R "${DOKKU_SYSTEM_USER}:${DOKKU_SYSTEM_GROUP}" "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}"
 
   rm -f "/etc/sudoers.d/dokku-${PLUGIN_COMMAND_PREFIX}*"
   _SUDOERS_FILE="/etc/sudoers.d/dokku-${PLUGIN_COMMAND_PREFIX}"
