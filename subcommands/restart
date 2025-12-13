@@ -14,7 +14,7 @@ service-restart-cmd() {
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare SERVICE="$1"
 
-  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" restart "$@"
+  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" restart "$PLUGIN_COMMAND_PREFIX" "$@"
 }
 
 service-restart-cmd "$@"

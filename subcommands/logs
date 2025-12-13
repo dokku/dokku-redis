@@ -19,7 +19,7 @@ service-logs-cmd() {
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare SERVICE="$1" TAIL_FLAG="$2" TAIL_NUM_OPTIONAL="${3:-all}"
 
-  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" logs "$@"
+  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" logs "$PLUGIN_COMMAND_PREFIX" "$@"
 }
 
 service-logs-cmd "$@"

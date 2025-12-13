@@ -14,7 +14,7 @@ service-exists-cmd() {
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare SERVICE="$1"
 
-  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" exists "$@"
+  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" exists "$PLUGIN_COMMAND_PREFIX" "$@"
 }
 
 service-exists-cmd "$@"
