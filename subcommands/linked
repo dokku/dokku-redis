@@ -16,7 +16,7 @@ service-linked-cmd() {
   declare SERVICE="$1" APP="$2"
   APP=${APP:="$DOKKU_APP_NAME"}
 
-  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" linked "$@"
+  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" linked "$PLUGIN_COMMAND_PREFIX" "$@"
 }
 
 service-linked-cmd "$@"

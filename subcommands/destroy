@@ -15,7 +15,7 @@ service-destroy-cmd() {
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare SERVICE="$1" FORCE_FLAG="$2"
 
-  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" destroy "$@"
+  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" destroy "$PLUGIN_COMMAND_PREFIX" "$@"
 }
 
 service-destroy-cmd "$@"

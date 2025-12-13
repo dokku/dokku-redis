@@ -15,7 +15,7 @@ service-app-links-cmd() {
   declare APP="$1"
   APP=${APP:="$DOKKU_APP_NAME"}
 
-  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" app-links "$@"
+  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" app-links "$PLUGIN_COMMAND_PREFIX" "$@"
 }
 
 service-app-links-cmd "$@"
