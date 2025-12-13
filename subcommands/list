@@ -12,7 +12,7 @@ service-list-cmd() {
   local cmd="$PLUGIN_COMMAND_PREFIX:list" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
 
-  service_list
+  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" list "$@"
 }
 
 service-list-cmd "$@"

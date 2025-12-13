@@ -14,11 +14,7 @@ service-restart-cmd() {
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare SERVICE="$1"
 
-  [[ -z "$SERVICE" ]] && dokku_log_fail "Please specify a valid name for the service"
-  verify_service_name "$SERVICE"
-  service_pause "$SERVICE"
-  service_start "$SERVICE"
-  dokku_log_info1 "Please call dokku ps:restart on all linked apps"
+  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" restart "$@"
 }
 
 service-restart-cmd "$@"
