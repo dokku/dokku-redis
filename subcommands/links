@@ -16,9 +16,7 @@ service-links-cmd() {
   local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
   local LINKS_FILE="$SERVICE_ROOT/LINKS"
 
-  [[ -z "$SERVICE" ]] && dokku_log_fail "Please specify a valid name for the service"
-  verify_service_name "$SERVICE"
-  service_links "$SERVICE"
+  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" links "$PLUGIN_COMMAND_PREFIX" "$@"
 }
 
 service-links-cmd "$@"

@@ -14,9 +14,7 @@ service-pause-cmd() {
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare SERVICE="$1"
 
-  [[ -z "$SERVICE" ]] && dokku_log_fail "Please specify a valid name for the service"
-  verify_service_name "$SERVICE"
-  service_pause "$SERVICE"
+  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" pause "$PLUGIN_COMMAND_PREFIX" "$@"
 }
 
 service-pause-cmd "$@"
