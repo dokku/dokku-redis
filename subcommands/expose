@@ -17,9 +17,7 @@ service-expose-cmd() {
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare SERVICE="$1" PORTS_LIST=("${@:2}")
 
-  [[ -z "$SERVICE" ]] && dokku_log_fail "Please specify a valid name for the service"
-  verify_service_name "$SERVICE"
-  service_port_expose "$SERVICE" "${@:2}"
+  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" expose "$PLUGIN_COMMAND_PREFIX" "$@"
 }
 
 service-expose-cmd "$@"
