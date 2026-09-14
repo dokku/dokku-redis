@@ -1,6 +1,12 @@
 #!/usr/bin/env bats
 load test_helper
 
+teardown() {
+  dokku "$PLUGIN_COMMAND_PREFIX:unlink" l app || true
+  dokku --force "$PLUGIN_COMMAND_PREFIX:destroy" l || true
+  dokku --force apps:destroy app || true
+}
+
 @test "($PLUGIN_COMMAND_PREFIX:destroy) success with --force" {
   dokku "$PLUGIN_COMMAND_PREFIX:create" l
   run dokku --force "$PLUGIN_COMMAND_PREFIX:destroy" l
