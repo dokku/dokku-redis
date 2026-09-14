@@ -4,12 +4,6 @@ set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
 service-unlink-cmd() {
-  #E you can unlink a $PLUGIN_COMMAND_PREFIX service
-  #E > NOTE: this will restart your app and unset related environment variables
-  #E dokku $PLUGIN_COMMAND_PREFIX:unlink lollipop playground
-  #A service, service to run command against
-  #A app, app to run command against
-  #F -n|--no-restart "false", whether or not to restart the app on unlink (default: true)
   declare desc="unlink the $PLUGIN_SERVICE service from the app"
   local cmd="$PLUGIN_COMMAND_PREFIX:unlink" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1

@@ -4,23 +4,6 @@ set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
 service-promote-cmd() {
-  #E if you have a $PLUGIN_COMMAND_PREFIX service linked to an app and try to link another $PLUGIN_COMMAND_PREFIX service
-  #E another link environment variable will be generated automatically:
-  #E
-  #E     DOKKU_${PLUGIN_DEFAULT_ALIAS}_BLUE_URL=${PLUGIN_SCHEME}://:ANOTHER_PASSWORD@dokku-${PLUGIN_COMMAND_PREFIX}-other-service:${PLUGIN_DATASTORE_PORTS[0]}/other_service
-  #E
-  #E you can promote the new service to be the primary one
-  #E > NOTE: this will restart your app
-  #E dokku $PLUGIN_COMMAND_PREFIX:promote other_service playground
-  #E this will replace ${PLUGIN_DEFAULT_ALIAS}_URL with the url from other_service and generate
-  #E another environment variable to hold the previous value if necessary.
-  #E you could end up with the following for example:
-  #E
-  #E     ${PLUGIN_DEFAULT_ALIAS}_URL=${PLUGIN_SCHEME}://:ANOTHER_PASSWORD@dokku-${PLUGIN_COMMAND_PREFIX}-other-service:${PLUGIN_DATASTORE_PORTS[0]}/other_service
-  #E     DOKKU_${PLUGIN_DEFAULT_ALIAS}_BLUE_URL=${PLUGIN_SCHEME}://:ANOTHER_PASSWORD@dokku-${PLUGIN_COMMAND_PREFIX}-other-service:${PLUGIN_DATASTORE_PORTS[0]}/other_service
-  #E     DOKKU_${PLUGIN_DEFAULT_ALIAS}_SILVER_URL=${PLUGIN_SCHEME}://:SOME_PASSWORD@dokku-${PLUGIN_COMMAND_PREFIX}-lollipop:${PLUGIN_DATASTORE_PORTS[0]}/lollipop
-  #A service, service to run command against
-  #A app, app to run command against
   declare desc="promote service <service> as ${PLUGIN_DEFAULT_ALIAS}_URL in <app>"
   local cmd="$PLUGIN_COMMAND_PREFIX:promote" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1

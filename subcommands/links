@@ -4,9 +4,6 @@ set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
 service-links-cmd() {
-  #E list all apps linked to the 'lollipop' $PLUGIN_COMMAND_PREFIX service.
-  #E dokku $PLUGIN_COMMAND_PREFIX:links lollipop
-  #A service, service to run command against
   declare desc="list all apps linked to the $PLUGIN_SERVICE service"
   local cmd="$PLUGIN_COMMAND_PREFIX:links" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1

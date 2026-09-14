@@ -4,9 +4,6 @@ set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
 service-app-links-cmd() {
-  #E list all $PLUGIN_COMMAND_PREFIX services that are linked to the 'playground' app.
-  #E dokku $PLUGIN_COMMAND_PREFIX:app-links playground
-  #A app, app to run command against
   declare desc="list all $PLUGIN_SERVICE service links for a given app"
   local cmd="$PLUGIN_COMMAND_PREFIX:app-links" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1

@@ -4,9 +4,6 @@ set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
 service-pause-cmd() {
-  #E pause the running container for the service
-  #E dokku $PLUGIN_COMMAND_PREFIX:pause lollipop
-  #A service, service to run command against
   declare desc="pause a running $PLUGIN_SERVICE service"
   local cmd="$PLUGIN_COMMAND_PREFIX:pause" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1

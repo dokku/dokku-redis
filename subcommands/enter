@@ -4,14 +4,6 @@ set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
 service-enter-cmd() {
-  #E a bash prompt can be opened against a running service.
-  #E filesystem changes will not be saved to disk.
-  #E > NOTE: disconnecting from ssh while running this command may leave zombie processes due to moby/moby#9098
-  #E dokku $PLUGIN_COMMAND_PREFIX:enter lollipop
-  #E you may also run a command directly against the service.
-  #E filesystem changes will not be saved to disk.
-  #E dokku $PLUGIN_COMMAND_PREFIX:enter lollipop touch /tmp/test
-  #A service, service to run command against
   declare desc="enter or run a command in a running $PLUGIN_SERVICE service container"
   local cmd="$PLUGIN_COMMAND_PREFIX:enter" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1

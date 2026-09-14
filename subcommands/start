@@ -4,9 +4,6 @@ set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
 service-start-cmd() {
-  #E start the service
-  #E dokku $PLUGIN_COMMAND_PREFIX:start lollipop
-  #A service, service to run command against
   declare desc="start a previously stopped $PLUGIN_SERVICE service"
   local cmd="$PLUGIN_COMMAND_PREFIX:start" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1

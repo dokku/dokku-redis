@@ -6,9 +6,6 @@ source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/common-functi
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
 
 service-import-cmd() {
-  #E import a datastore dump
-  #E dokku $PLUGIN_COMMAND_PREFIX:import lollipop < data.dump
-  #A service, service to run command against
   declare desc="import a dump into the $PLUGIN_SERVICE service database"
   local cmd="$PLUGIN_COMMAND_PREFIX:import" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1

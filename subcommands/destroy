@@ -4,10 +4,6 @@ set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
 service-destroy-cmd() {
-  #E destroy the service, it's data, and the running container
-  #E dokku $PLUGIN_COMMAND_PREFIX:destroy lollipop
-  #A service, service to run command against
-  #F -f|--force, force destroy without asking for confirmation
   declare desc="delete the $PLUGIN_SERVICE service/data/container if there are no links left"
   local cmd="$PLUGIN_COMMAND_PREFIX:destroy" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1

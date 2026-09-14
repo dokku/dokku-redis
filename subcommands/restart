@@ -4,9 +4,6 @@ set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
 service-restart-cmd() {
-  #E restart the service
-  #E dokku $PLUGIN_COMMAND_PREFIX:restart lollipop
-  #A service, service to run command against
   declare desc="graceful shutdown and restart of the $PLUGIN_SERVICE service container"
   local cmd="$PLUGIN_COMMAND_PREFIX:restart" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1

@@ -6,9 +6,6 @@ source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/common-functi
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
 
 service-backup-unset-encryption-cmd() {
-  #E unset the GPG encryption passphrase for backups
-  #E dokku $PLUGIN_COMMAND_PREFIX:backup-unset-encryption lollipop
-  #A service, service to run command against
   declare desc="unset encryption for future backups of the $PLUGIN_SERVICE service"
   local cmd="$PLUGIN_COMMAND_PREFIX:backup-unset-encryption" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1

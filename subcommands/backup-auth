@@ -6,20 +6,6 @@ source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/common-functi
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
 
 service-backup-auth-cmd() {
-  #E setup s3 backup authentication
-  #E dokku $PLUGIN_COMMAND_PREFIX:backup-auth lollipop AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
-  #E setup s3 backup authentication with different region
-  #E dokku $PLUGIN_COMMAND_PREFIX:backup-auth lollipop AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_REGION
-  #E setup s3 backup authentication with different signature version and endpoint
-  #E dokku $PLUGIN_COMMAND_PREFIX:backup-auth lollipop AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_REGION AWS_SIGNATURE_VERSION ENDPOINT_URL
-  #E more specific example for minio auth
-  #E dokku $PLUGIN_COMMAND_PREFIX:backup-auth lollipop MINIO_ACCESS_KEY_ID MINIO_SECRET_ACCESS_KEY us-east-1 s3v4 https://YOURMINIOSERVICE
-  #A service, service to run command against
-  #A access-key-id, an amazon AWS_ACCESS_KEY_ID
-  #A aws-secret-access-key, an amazon AWS_SECRET_ACCESS_KEY
-  #A aws-default-region, (optional) a valid amazon S3 region
-  #A aws-signature-version, (optional) the AWS signature version to use when signing S3 requests
-  #A endpoint-url, (optional) an aws endpoint to upload to
   declare desc="set up authentication for backups on the $PLUGIN_SERVICE service"
   local cmd="$PLUGIN_COMMAND_PREFIX:backup-auth" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
