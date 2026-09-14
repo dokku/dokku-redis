@@ -5,18 +5,6 @@ set -eo pipefail
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
 source "$PLUGIN_AVAILABLE_PATH/config/functions"
 
-add_to_links_file() {
-  declare desc="add an app to the service link file"
-  declare SERVICE="$1" APP="$2"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local LINKS_FILE="$SERVICE_ROOT/LINKS"
-
-  touch "$LINKS_FILE"
-  sed -i.bak "/^$APP\$/d" "$LINKS_FILE" && rm "$LINKS_FILE.bak"
-  echo "$APP" >>"$LINKS_FILE"
-  sort "$LINKS_FILE" -u -o "$LINKS_FILE"
-}
-
 auth_service_filter() {
   declare desc="calls user-service plugin trigger"
   declare SERVICES=("$@")
@@ -90,15 +78,6 @@ get_service_name() {
   echo "dokku.${PLUGIN_COMMAND_PREFIX}.$SERVICE"
 }
 
-in_links_file() {
-  declare desc="check if a service LINKS file contains an app"
-  declare SERVICE="$1" APP="$2"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local LINKS_FILE="$SERVICE_ROOT/LINKS"
-
-  grep -qE "^$APP\$" "$LINKS_FILE"
-}
-
 is_container_status() {
   declare desc="return 0 or 1 depending upon whether a given container has a certain status"
   declare CID="$1" STATUS="$2"
@@ -125,20 +104,6 @@ is_implemented_command() {
     [[ "$e" == "$CMD" ]] && return 1
   done
   return 0
-}
-
-remove_from_links_file() {
-  declare desc="remove an app from the service link file"
-  declare SERVICE="$1" APP="$2"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local LINKS_FILE="$SERVICE_ROOT/LINKS"
-
-  if [[ ! -f "$LINKS_FILE" ]]; then
-    return
-  fi
-
-  sed -i.bak "/^$APP\$/d" "$LINKS_FILE" && rm "$LINKS_FILE.bak"
-  sort "$LINKS_FILE" -u -o "$LINKS_FILE"
 }
 
 service_exists() {
@@ -237,18 +202,6 @@ service_parse_args() {
     esac
   done
   shift "$((OPTIND - 1))" # remove options from positional parameters
-}
-
-service_status() {
-  declare desc="display the status of a service"
-  declare SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local ID="$(cat "$SERVICE_ROOT/ID")"
-  local CONTAINER_STATUS
-
-  CONTAINER_STATUS=$("$DOCKER_BIN" container inspect -f "{{.State.Status}}" "$ID" 2>/dev/null || true)
-  [[ -n "$CONTAINER_STATUS" ]] && echo "$CONTAINER_STATUS" && return 0
-  echo "missing" && return 0
 }
 
 service_version() {
