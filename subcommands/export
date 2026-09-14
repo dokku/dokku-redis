@@ -17,9 +17,7 @@ service-export-cmd() {
   declare SERVICE="$1"
   is_implemented_command "$cmd" || dokku_log_fail "Not yet implemented"
 
-  [[ -z "$SERVICE" ]] && dokku_log_fail "Please specify a valid name for the service"
-  verify_service_name "$SERVICE"
-  service_export "$SERVICE"
+  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" export "$PLUGIN_COMMAND_PREFIX" "$@"
 }
 
 service-export-cmd "$@"

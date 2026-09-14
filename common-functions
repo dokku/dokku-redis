@@ -186,7 +186,7 @@ service_backup() {
   "$DOCKER_BIN" container inspect "$ID" >/dev/null 2>&1 || dokku_log_fail "Service container does not exist"
   is_container_status "$ID" "Running" || dokku_log_fail "Service container is not running"
 
-  (service_export "$SERVICE" >"${BACKUP_TMPDIR}/export")
+  ("${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" export "$PLUGIN_COMMAND_PREFIX" "$SERVICE" >"${BACKUP_TMPDIR}/export")
 
   # Build parameter list for s3backup tool
   BACKUP_PARAMETERS="$BACKUP_PARAMETERS -e BUCKET_NAME=$BUCKET_NAME"
@@ -380,7 +380,7 @@ service_container_rm() {
   local SERVICE_NAME="$(get_service_name "$SERVICE")"
   local ID
 
-  service_pause "$SERVICE"
+  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" pause "$PLUGIN_COMMAND_PREFIX" "$SERVICE"
   ID=$("$DOCKER_BIN" container ps -aq --no-trunc --filter "name=^/$SERVICE_NAME$") || true
   # this may be 'true' in tests...
   if [[ -z "$ID" ]] || [[ "$ID" == "true" ]]; then
@@ -585,26 +585,6 @@ service_status() {
   CONTAINER_STATUS=$("$DOCKER_BIN" container inspect -f "{{.State.Status}}" "$ID" 2>/dev/null || true)
   [[ -n "$CONTAINER_STATUS" ]] && echo "$CONTAINER_STATUS" && return 0
   echo "missing" && return 0
-}
-
-service_pause() {
-  declare desc="pause a running service"
-  declare SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local SERVICE_NAME="$(get_service_name "$SERVICE")"
-  local ID=$("$DOCKER_BIN" container ps -aq --no-trunc --filter "name=^/$SERVICE_NAME$") || true
-  [[ -z $ID ]] && dokku_log_warn "Service is already paused" && return 0
-
-  if [[ -n $ID ]]; then
-    dokku_log_info2_quiet "Pausing container"
-    "$DOCKER_BIN" container stop "$SERVICE_NAME" >/dev/null
-    if "$DOCKER_BIN" container inspect "$ID" >/dev/null 2>&1; then
-      "$DOCKER_BIN" container stop "$SERVICE_NAME.ambassador" >/dev/null 2>&1 || true
-    fi
-    dokku_log_verbose_quiet "Container paused"
-  else
-    dokku_log_verbose_quiet "No container exists for $SERVICE"
-  fi
 }
 
 service_version() {

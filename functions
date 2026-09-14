@@ -154,67 +154,6 @@ service_create_container() {
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" info "$PLUGIN_COMMAND_PREFIX" "$SERVICE"
 }
 
-service_persistence_field() {
-  declare desc="read a single field out of the redis persistence info section"
-  declare SERVICE_NAME="$1" PASSWORD="$2" FIELD="$3"
-
-  "$DOCKER_BIN" container exec "$SERVICE_NAME" redis-cli --no-auth-warning -a "$PASSWORD" INFO persistence 2>/dev/null |
-    tr -d '\r' | awk -F: -v field="$FIELD" '$1 == field { print $2 }'
-}
-
-service_export() {
-  local SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local SERVICE_NAME="$(get_service_name "$SERVICE")"
-  local PASSWORD="$(service_password "$SERVICE")"
-  local TIMEOUT="${PLUGIN_EXPORT_TIMEOUT:-120}"
-  local BGSAVE_OUTPUT WAITED=0
-
-  [[ -n $SSH_TTY ]] && stty -opost
-
-  # redis-cli exits zero even when the server rejects the command, so the reply
-  # has to be inspected rather than just the exit status
-  if ! BGSAVE_OUTPUT="$("$DOCKER_BIN" container exec "$SERVICE_NAME" redis-cli --no-auth-warning -a "$PASSWORD" BGSAVE 2>&1)" || [[ "$BGSAVE_OUTPUT" != *"Background saving"* ]]; then
-    dokku_log_fail "Unable to start a background save: ${BGSAVE_OUTPUT}"
-  fi
-
-  # BGSAVE returns as soon as the child is forked, so wait on the completion
-  # flag rather than on LASTSAVE. LASTSAVE only has second resolution and is
-  # seeded with the server start time, so a save that finishes in the same
-  # second the container started is indistinguishable from no save at all.
-  while [[ "$(service_persistence_field "$SERVICE_NAME" "$PASSWORD" rdb_bgsave_in_progress)" == "1" ]]; do
-    if [[ "$WAITED" -ge "$TIMEOUT" ]]; then
-      dokku_log_fail "Background save did not complete within ${TIMEOUT} seconds"
-    fi
-    sleep 1
-    WAITED=$((WAITED + 1))
-  done
-
-  if [[ "$(service_persistence_field "$SERVICE_NAME" "$PASSWORD" rdb_last_bgsave_status)" != "ok" ]]; then
-    dokku_log_fail "Background save failed, check the $PLUGIN_SERVICE service logs"
-  fi
-
-  "$DOCKER_BIN" container exec "$SERVICE_NAME" cat /data/dump.rdb
-  status=$?
-  [[ -n $SSH_TTY ]] && stty opost
-  exit $status
-}
-
-service_import() {
-  local SERVICE="$1"
-  SERVICE_HOST_ROOT="$PLUGIN_DATA_HOST_ROOT/$SERVICE"
-  SERVICE_NAME="$(get_service_name "$SERVICE")"
-
-  if [[ -t 0 ]]; then
-    dokku_log_fail "No data provided on stdin."
-  fi
-  suppress_output service_container_rm "$SERVICE"
-  "$DOCKER_BIN" container run --rm -v "$SERVICE_HOST_ROOT/data:/data" "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" bash -c "rm -f /data/dump.rdb"
-  cat >"$SERVICE_HOST_ROOT/data/dump.rdb"
-  "$DOCKER_BIN" container run --rm -v "$SERVICE_HOST_ROOT/data:/data" "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" bash -c "chown redis: /data/dump.rdb"
-  suppress_output service_start "$SERVICE"
-}
-
 service_start() {
   local SERVICE="$1"
   local QUIET="$2"
@@ -250,9 +189,3 @@ service_start() {
   fi
 }
 
-service_url() {
-  local SERVICE="$1"
-  local PASSWORD="$(service_password "$SERVICE")"
-  local SERVICE_DNS_HOSTNAME="$(service_dns_hostname "$SERVICE")"
-  echo "$PLUGIN_SCHEME://:$PASSWORD@$SERVICE_DNS_HOSTNAME:${PLUGIN_DATASTORE_PORTS[0]}"
-}
