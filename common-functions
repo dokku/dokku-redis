@@ -84,14 +84,6 @@ fn-services-list() {
   done
 }
 
-docker_ports_options() {
-  declare desc="export a list of exposed ports"
-  declare PORTS=("$@")
-  for ((i = 0; i < ${#PLUGIN_DATASTORE_PORTS[@]}; i++)); do
-    echo -n "-p ${PORTS[i]}:${PLUGIN_DATASTORE_PORTS[i]} "
-  done
-}
-
 get_service_name() {
   declare desc="retrieve a docker service label"
   declare SERVICE="$1"
@@ -149,42 +141,12 @@ remove_from_links_file() {
   sort "$LINKS_FILE" -u -o "$LINKS_FILE"
 }
 
-service_dns_hostname() {
-  declare desc="retrieve the alias of a service"
-  declare SERVICE="$1"
-  local SERVICE_NAME="$(get_service_name "$SERVICE")"
-  echo "$SERVICE_NAME" | tr ._ -
-}
-
 service_exists() {
   declare desc="returns 0 or 1 depending on whether service exists or not"
   declare SERVICE="$1"
   [[ -z "$SERVICE" ]] && return 1
   [[ -d "$PLUGIN_DATA_ROOT/$SERVICE" ]] && return 0
   return 1
-}
-
-service_image_exists() {
-  declare desc="check if the current image exists"
-  declare SERVICE="$1" PLUGIN_IMAGE="${2:-$PLUGIN_IMAGE}" PLUGIN_IMAGE_VERSION="${3:-$PLUGIN_IMAGE_VERSION}"
-  local plugin_image="$PLUGIN_IMAGE"
-  local plugin_image_version="$PLUGIN_IMAGE_VERSION"
-
-  if [[ -z "$PLUGIN_IMAGE" ]] && [[ -f "$SERVICE_ROOT/IMAGE" ]]; then
-    plugin_image="$(cat "$SERVICE_ROOT/IMAGE")"
-  fi
-
-  if [[ -z "$PLUGIN_IMAGE_VERSION" ]] && [[ -f "$SERVICE_ROOT/IMAGE_VERSION" ]]; then
-    plugin_image_version="$(cat "$SERVICE_ROOT/IMAGE_VERSION")"
-  fi
-
-  local IMAGE="$plugin_image:$plugin_image_version"
-
-  if [[ "$("$DOCKER_BIN" image ls -q "$IMAGE" 2>/dev/null)" == "" ]]; then
-    return 1
-  fi
-
-  return 0
 }
 
 service_parse_args() {
@@ -275,37 +237,6 @@ service_parse_args() {
     esac
   done
   shift "$((OPTIND - 1))" # remove options from positional parameters
-}
-
-service_port_reconcile_status() {
-  declare SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local PORT_FILE="$SERVICE_ROOT/PORT"
-  local SERVICE_NAME="$(get_service_name "$SERVICE")"
-  local EXPOSED_NAME="$SERVICE_NAME.ambassador"
-
-  if [[ ! -s "$PORT_FILE" ]]; then
-    if "$DOCKER_BIN" container inspect "$EXPOSED_NAME" >/dev/null 2>&1; then
-      "$DOCKER_BIN" container stop "$EXPOSED_NAME" >/dev/null 2>&1 || true
-      suppress_output "$DOCKER_BIN" container rm "$EXPOSED_NAME"
-      return $?
-    fi
-    return
-  fi
-
-  if is_container_status "$EXPOSED_NAME" "Running"; then
-    return
-  fi
-
-  if "$DOCKER_BIN" container inspect "$EXPOSED_NAME" >/dev/null 2>&1; then
-    suppress_output "$DOCKER_BIN" container start "$EXPOSED_NAME"
-    return $?
-  fi
-
-  # shellcheck disable=SC2207
-  PORTS=($(cat "$PORT_FILE"))
-  # shellcheck disable=SC2046
-  "$DOCKER_BIN" container run -d --link "$SERVICE_NAME:$PLUGIN_COMMAND_PREFIX" --name "$EXPOSED_NAME" $(docker_ports_options "${PORTS[@]}") --restart always --label dokku=ambassador --label "dokku.ambassador=$PLUGIN_COMMAND_PREFIX" "$PLUGIN_AMBASSADOR_IMAGE" >/dev/null
 }
 
 service_status() {

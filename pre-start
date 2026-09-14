@@ -25,7 +25,7 @@ plugin-pre-start() {
     fi
 
     dokku_log_warn "$PLUGIN_SERVICE service $SERVICE is not running, issuing service start"
-    service_start "$SERVICE"
+    "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" start "$PLUGIN_COMMAND_PREFIX" "$SERVICE"
   done
 }
 
