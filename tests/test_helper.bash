@@ -59,6 +59,12 @@ assert_contains() {
   fi
 }
 
+assert_not_contains() {
+  if [[ "$1" == *"$2"* ]]; then
+    flunk "expected $2 to not be in: $1"
+  fi
+}
+
 # ShellCheck doesn't know about $output from Bats
 # shellcheck disable=SC2154
 assert_output() {
