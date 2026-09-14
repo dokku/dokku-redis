@@ -15,14 +15,10 @@ service-unlink-cmd() {
   declare desc="unlink the $PLUGIN_SERVICE service from the app"
   local cmd="$PLUGIN_COMMAND_PREFIX:unlink" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare SERVICE="$1" APP="$2"
+  declare SERVICE="$1" APP="$2" UNLINK_FLAGS_LIST=("${@:3}")
   APP=${APP:="$DOKKU_APP_NAME"}
 
-  [[ -z "$SERVICE" ]] && dokku_log_fail "Please specify a valid name for the service"
-  [[ -z "$APP" ]] && dokku_log_fail "Please specify an app to run the command on"
-  verify_service_name "$SERVICE"
-  verify_app_name "$APP"
-  service_unlink "$SERVICE" "$APP"
+  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" unlink "$PLUGIN_COMMAND_PREFIX" "$SERVICE" "$APP" "${UNLINK_FLAGS_LIST[@]}"
 }
 
 service-unlink-cmd "$@"
