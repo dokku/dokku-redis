@@ -78,18 +78,6 @@ get_service_name() {
   echo "dokku.${PLUGIN_COMMAND_PREFIX}.$SERVICE"
 }
 
-is_container_status() {
-  declare desc="return 0 or 1 depending upon whether a given container has a certain status"
-  declare CID="$1" STATUS="$2"
-  local TEMPLATE="{{.State.$STATUS}}"
-  local CONTAINER_STATUS=$("$DOCKER_BIN" container inspect -f "$TEMPLATE" "$CID" 2>/dev/null || true)
-
-  if [[ "$CONTAINER_STATUS" == "true" ]]; then
-    return 0
-  fi
-  return 1
-}
-
 is_implemented_command() {
   declare desc="return true if value ($1) is in list (all other arguments)"
   declare CMD="$1"
@@ -106,128 +94,10 @@ is_implemented_command() {
   return 0
 }
 
-service_exists() {
-  declare desc="returns 0 or 1 depending on whether service exists or not"
-  declare SERVICE="$1"
-  [[ -z "$SERVICE" ]] && return 1
-  [[ -d "$PLUGIN_DATA_ROOT/$SERVICE" ]] && return 0
-  return 1
-}
-
-service_parse_args() {
-  declare desc="cli arg parser"
-  local next_index=1
-  local skip=false
-  local args=("$@")
-
-  for arg in "$@"; do
-    shift
-    case "$arg" in
-      "--alias") set -- "$@" "-a" ;;
-      "--config-options") set -- "$@" "-c" ;;
-      "--custom-env") set -- "$@" "-C" ;;
-      "--database") set -- "$@" "-d" ;;
-      "--image-version") set -- "$@" "-I" ;;
-      "--initial-network") set -- "$@" "-N" ;;
-      "--image") set -- "$@" "-i" ;;
-      "--memory") set -- "$@" "-m" ;;
-      "--no-restart") set -- "$@" "-n" ;;
-      "--password") set -- "$@" "-p" ;;
-      "--post-create-network") set -- "$@" "-P" ;;
-      "--post-start-network") set -- "$@" "-S" ;;
-      "--querystring") set -- "$@" "-q" ;;
-      "--restart-apps") set -- "$@" "-R" ;;
-      "--root-password") set -- "$@" "-r" ;;
-      "--shm-size") set -- "$@" "-s" ;;
-      "--user") set -- "$@" "-u" ;;
-      *) set -- "$@" "$arg" ;;
-    esac
-  done
-
-  OPTIND=1
-  while getopts "na:c:C:d:i:I:m:n:N:p:P:q:R:r:s:S:u:" opt; do
-    case "$opt" in
-      a)
-        SERVICE_ALIAS="${OPTARG^^}"
-        export SERVICE_ALIAS="${SERVICE_ALIAS%_URL}"
-        ;;
-      c)
-        export PLUGIN_CONFIG_OPTIONS=$OPTARG
-        ;;
-      C)
-        export SERVICE_CUSTOM_ENV=$OPTARG
-        ;;
-      d)
-        export SERVICE_DATABASE=$OPTARG
-        ;;
-      i)
-        export PLUGIN_IMAGE=$OPTARG
-        ;;
-      I)
-        export PLUGIN_IMAGE_VERSION=$OPTARG
-        ;;
-      m)
-        export SERVICE_MEMORY=$OPTARG
-        ;;
-      n)
-        export SERVICE_RESTART_APPS=false
-        ;;
-      N)
-        export SERVICE_INITIAL_NETWORK=$OPTARG
-        ;;
-      p)
-        export SERVICE_PASSWORD=$OPTARG
-        ;;
-      P)
-        export SERVICE_POST_CREATE_NETWORK=$OPTARG
-        ;;
-      q)
-        export SERVICE_QUERYSTRING=${OPTARG#"?"}
-        ;;
-      R)
-        export SERVICE_RESTART_APPS=$OPTARG
-        ;;
-      r)
-        export SERVICE_ROOT_PASSWORD=$OPTARG
-        ;;
-      s)
-        export SERVICE_SHM_SIZE=$OPTARG
-        ;;
-      S)
-        export SERVICE_POST_START_NETWORK=$OPTARG
-        ;;
-      u)
-        export SERVICE_USER=$OPTARG
-        ;;
-    esac
-  done
-  shift "$((OPTIND - 1))" # remove options from positional parameters
-}
-
 service_version() {
   declare desc="display the running version for an image"
   declare SERVICE="$1"
   local SERVICE_NAME="$(get_service_name "$SERVICE")"
   "$DOCKER_BIN" container inspect -f '{{.Config.Image}}' "$SERVICE_NAME" 2>/dev/null || true
-}
-
-verify_service_name() {
-  declare desc="verify that a service exists"
-  declare SERVICE="$@"
-
-  if [[ -z "$SERVICE" ]]; then
-    dokku_log_fail "SERVICE must not be empty"
-  fi
-
-  if [[ ! -d "$PLUGIN_DATA_ROOT/$SERVICE" ]]; then
-    dokku_log_fail "$PLUGIN_SERVICE service $SERVICE does not exist"
-  fi
-
-  SERVICE="$(auth_service_filter "$SERVICE")"
-  if [[ -z "$SERVICE" ]]; then
-    dokku_log_fail "$PLUGIN_SERVICE service $SERVICE does not exist"
-  fi
-
-  return 0
 }
 
