@@ -4,6 +4,10 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/config"
 # to a subcommand file, so this bows out before touching anything of ours
 [[ " help $PLUGIN_COMMAND_PREFIX $PLUGIN_COMMAND_PREFIX:default $PLUGIN_COMMAND_PREFIX:help " == *" $1 "* ]] || exit "$DOKKU_NOT_IMPLEMENTED_EXIT"
 
+# plugin:enable primes the bash completion cache before plugin:install has
+# fetched the binary, and a plugin with nothing installed has no help to give
+[[ -x "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" ]] || exit "$DOKKU_NOT_IMPLEMENTED_EXIT"
+
 set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
