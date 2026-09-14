@@ -92,53 +92,10 @@ docker_ports_options() {
   done
 }
 
-get_container_ip() {
-  declare desc="retrieve the ip address of a container"
-  declare CONTAINER_ID="$1"
-  "$DOCKER_BIN" container inspect --format '{{ .NetworkSettings.IPAddress }}' "$CONTAINER_ID" 2>/dev/null
-}
-
-get_database_name() {
-  declare desc="retrieve a sanitized database name"
-  declare SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-
-  if [[ ! -f "$SERVICE_ROOT/DATABASE_NAME" ]]; then
-    echo "$SERVICE" >"$SERVICE_ROOT/DATABASE_NAME"
-  fi
-
-  cat "$SERVICE_ROOT/DATABASE_NAME"
-}
-
-get_random_ports() {
-  declare desc="retrieve N random ports"
-  declare iterations="${1:-1}"
-  for ((i = 0; i < iterations; i++)); do
-    local port=$RANDOM
-    local quit=0
-    while [ "$quit" -ne 1 ]; do
-      netstat -an | grep $port >/dev/null
-      # shellcheck disable=SC2181
-      if [ $? -gt 0 ]; then
-        quit=1
-      else
-        port=$((port + 1))
-      fi
-    done
-    echo $port
-  done
-}
-
 get_service_name() {
   declare desc="retrieve a docker service label"
   declare SERVICE="$1"
   echo "dokku.${PLUGIN_COMMAND_PREFIX}.$SERVICE"
-}
-
-get_url_from_config() {
-  declare desc="retrieve a given _URL from a list of configuration variables"
-  declare EXISTING_CONFIG="$1" CONFIG_VAR="$2"
-  echo "$EXISTING_CONFIG" | grep "$CONFIG_VAR" | sed "s/$CONFIG_VAR:\s*//" | xargs
 }
 
 in_links_file() {
@@ -202,62 +159,6 @@ remove_from_links_file() {
 
   sed -i.bak "/^$APP\$/d" "$LINKS_FILE" && rm "$LINKS_FILE.bak"
   sort "$LINKS_FILE" -u -o "$LINKS_FILE"
-}
-
-retry-docker-command() {
-  local ID="$1" COMMAND="$2"
-  local i=0 success=false
-  until [ $i -ge 100 ]; do
-    set +e
-    suppress_output "$DOCKER_BIN" container exec "$ID" sh -c "$COMMAND"
-    exit_code=$?
-    set -e
-    if [[ "$exit_code" == 0 ]]; then
-      success=true
-      break
-    fi
-    i=$((i + 1))
-    sleep 1
-  done
-  if [[ $i -gt 0 ]]; then
-    dokku_log_verbose "Container command retried ${i} time(s): ${COMMAND}"
-  fi
-  [[ "$success" == "true" ]] || dokku_log_fail "Failed to run command: ${COMMAND}"
-}
-
-service_alternative_alias() {
-  declare desc="retrieve an alternative alias for a service"
-  declare EXISTING_CONFIG="$1"
-  local COLORS=(AQUA BLACK BLUE FUCHSIA GRAY GREEN LIME MAROON NAVY OLIVE PURPLE RED SILVER TEAL WHITE YELLOW)
-  local ALIAS
-
-  for COLOR in "${COLORS[@]}"; do
-    ALIAS="${PLUGIN_ALT_ALIAS}_${COLOR}"
-    local IN_USE=$(echo "$EXISTING_CONFIG" | grep "${ALIAS}_URL")
-    if [[ -z "$IN_USE" ]]; then
-      break
-    fi
-    unset ALIAS
-  done
-  echo "$ALIAS"
-}
-
-service_app_links() {
-  declare desc="output all service links for a given app"
-  declare APP="$1"
-  local LINKED_APP SERVICE SERVICE_ROOT
-
-  for SERVICE in $(fn-services-list true); do
-    [[ -n "$SERVICE" ]] || continue
-
-    SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-    [[ -f "$SERVICE_ROOT/LINKS" ]] || continue
-    for LINKED_APP in $(<"$SERVICE_ROOT/LINKS"); do
-      if [[ "$LINKED_APP" == "$APP" ]]; then
-        echo "$SERVICE"
-      fi
-    done
-  done
 }
 
 service_backup() {
@@ -500,39 +401,12 @@ service_dns_hostname() {
   echo "$SERVICE_NAME" | tr ._ -
 }
 
-service_enter() {
-  declare desc="enter running app container of specified proc type"
-  declare SERVICE="$1" && shift 1
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local ID="$(cat "$SERVICE_ROOT/ID")"
-
-  "$DOCKER_BIN" container inspect "$ID" >/dev/null 2>&1 || dokku_log_fail "Service container does not exist"
-  is_container_status "$ID" "Running" || dokku_log_fail "Service container is not running"
-
-  local EXEC_CMD=""
-  has_tty && local DOKKU_RUN_OPTS+=" -i -t"
-  # shellcheck disable=SC2086
-  "$DOCKER_BIN" container exec $DOKKU_RUN_OPTS $ID $EXEC_CMD "${@:-/bin/bash}"
-}
-
 service_exists() {
   declare desc="returns 0 or 1 depending on whether service exists or not"
   declare SERVICE="$1"
   [[ -z "$SERVICE" ]] && return 1
   [[ -d "$PLUGIN_DATA_ROOT/$SERVICE" ]] && return 0
   return 1
-}
-
-service_exposed_ports() {
-  declare desc="list exposed ports for a service"
-  declare SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local PORT_FILE="$SERVICE_ROOT/PORT"
-  [[ ! -f $PORT_FILE ]] && echo '-' && return 0
-  local PORTS=($(cat "$PORT_FILE"))
-  for ((i = 0; i < ${#PLUGIN_DATASTORE_PORTS[@]}; i++)); do
-    echo -n "${PLUGIN_DATASTORE_PORTS[i]}->${PORTS[i]} "
-  done
 }
 
 service_image_exists() {
@@ -558,111 +432,6 @@ service_image_exists() {
   return 0
 }
 
-service_info() {
-  declare desc="retrieve information about a given service"
-  declare SERVICE="$1" INFO_FLAG="$2"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local SERVICE_URL=$(service_url "$SERVICE")
-  local PORT_FILE="$SERVICE_ROOT/PORT"
-  local SERVICE_CONTAINER_ID="$(cat "$SERVICE_ROOT/ID")"
-  local flag key valid_flags
-
-  local flag_map=(
-    "--config-dir: ${SERVICE_ROOT}/${PLUGIN_CONFIG_SUFFIX}"
-    "--config-options: $(cat "$SERVICE_ROOT/CONFIG_OPTIONS" 2>/dev/null || true)"
-    "--data-dir: ${SERVICE_ROOT}/data"
-    "--dsn: ${SERVICE_URL}"
-    "--exposed-ports: $(service_exposed_ports "$SERVICE")"
-    "--id: ${SERVICE_CONTAINER_ID}"
-    "--internal-ip: $(get_container_ip "${SERVICE_CONTAINER_ID}")"
-    "--initial-network: $(fn-plugin-property-get "$PLUGIN_COMMAND_PREFIX" "$SERVICE" "initial-network")"
-    "--links: $(service_linked_apps "$SERVICE")"
-    "--post-create-network: $(fn-plugin-property-get "$PLUGIN_COMMAND_PREFIX" "$SERVICE" "post-create-network")"
-    "--post-start-network: $(fn-plugin-property-get "$PLUGIN_COMMAND_PREFIX" "$SERVICE" "post-start-network")"
-    "--service-root: ${SERVICE_ROOT}"
-    "--status: $(service_status "$SERVICE")"
-    "--version: $(service_version "$SERVICE")"
-  )
-  if [[ -z "$INFO_FLAG" ]]; then
-    dokku_log_info2_quiet "$SERVICE $PLUGIN_COMMAND_PREFIX service information"
-    for flag in "${flag_map[@]}"; do
-      key="$(echo "${flag#--}" | cut -f1 -d' ' | tr - ' ')"
-      dokku_log_verbose "$(printf "%-20s %-25s" "${key^}" "${flag#*: }")"
-    done
-  else
-    local match=false
-    for flag in "${flag_map[@]}"; do
-      valid_flags="${valid_flags} $(echo "$flag" | cut -d':' -f1)"
-      if [[ "$flag" == "${INFO_FLAG}:"* ]]; then
-        echo "${flag#*: }" && match=true
-      fi
-    done
-    [[ "$match" == "true" ]] || dokku_log_fail "Invalid flag passed, valid flags:${valid_flags}"
-  fi
-}
-
-service_is_linked() {
-  declare desc="link a service to an application"
-  declare SERVICE="$1" APP="$2"
-  update_plugin_scheme_for_app "$APP"
-  local SERVICE_URL=$(service_url "$SERVICE")
-  local EXISTING_CONFIG=$(config_all "$APP")
-  local LINK=$(echo "$EXISTING_CONFIG" | grep "$SERVICE_URL" | cut -d: -f1) || true
-  if [[ -z $LINK ]]; then
-    dokku_log_warn "Service $SERVICE is not linked to $APP"
-    exit 1
-  fi
-  dokku_log_info1 "Service $SERVICE is linked to $APP"
-}
-
-service_link() {
-  declare desc="link a service to an application"
-  declare SERVICE="$1" APP="$2"
-  update_plugin_scheme_for_app "$APP"
-  local SERVICE_URL=$(service_url "$SERVICE")
-  local SERVICE_NAME="$(get_service_name "$SERVICE")"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local EXISTING_CONFIG=$(config_all "$APP")
-  local LINK=$(echo "$EXISTING_CONFIG" | grep "$SERVICE_URL" | cut -d: -f1) || true
-  local SERVICE_DNS_HOSTNAME=$(service_dns_hostname "$SERVICE")
-  local LINKS_FILE="$SERVICE_ROOT/LINKS"
-  local ALIAS="$PLUGIN_DEFAULT_ALIAS"
-  local DEFAULT_ALIAS
-
-  if [[ -n "$SERVICE_ALIAS" ]]; then
-    ALIAS="$SERVICE_ALIAS"
-    ALIAS_IN_USE=$(echo "$EXISTING_CONFIG" | grep "${ALIAS}_URL") || true
-    [[ -n "$ALIAS_IN_USE" ]] && dokku_log_fail "Specified alias $ALIAS already in use"
-  else
-    DEFAULT_ALIAS=$(echo "$EXISTING_CONFIG" | grep "${PLUGIN_DEFAULT_ALIAS}_URL") || true
-    if [[ -n "$DEFAULT_ALIAS" ]]; then
-      ALIAS=$(service_alternative_alias "$EXISTING_CONFIG")
-    fi
-    [[ -z "$ALIAS" ]] && dokku_log_fail "Unable to use default or generated URL alias"
-  fi
-
-  [[ -n $LINK ]] && dokku_log_fail "Already linked as $LINK"
-  plugn trigger service-action pre-link "$PLUGIN_COMMAND_PREFIX" "$SERVICE" "$APP"
-  add_to_links_file "$SERVICE" "$APP"
-
-  if declare -f -F add_passed_docker_option >/dev/null; then
-    # shellcheck disable=SC2034
-    local passed_phases=(build deploy run)
-    add_passed_docker_option passed_phases[@] "--link $SERVICE_NAME:$SERVICE_DNS_HOSTNAME"
-  else
-    dokku docker-options:add "$APP" build,deploy,run "--link $SERVICE_NAME:$SERVICE_DNS_HOSTNAME"
-  fi
-  [[ -n "$SERVICE_QUERYSTRING" ]] && SERVICE_URL="${SERVICE_URL}?${SERVICE_QUERYSTRING}"
-  plugn trigger service-action post-link "$PLUGIN_COMMAND_PREFIX" "$SERVICE" "$APP"
-  if [[ "$DOKKU_GLOBAL_FLAGS" == *"--no-restart"* ]] || [[ "$SERVICE_RESTART_APPS" == "false" ]]; then
-    config_set --no-restart "$APP" "${ALIAS}_URL=$SERVICE_URL"
-    dokku_log_verbose "Skipping restart of linked app"
-  else
-    config_set "$APP" "${ALIAS}_URL=$SERVICE_URL"
-  fi
-  plugn trigger service-action post-link-complete "$PLUGIN_COMMAND_PREFIX" "$SERVICE" "$APP"
-}
-
 service_linked_apps() {
   declare desc="list all apps linked to a service for info output"
   declare SERVICE="$1"
@@ -673,52 +442,6 @@ service_linked_apps() {
   [[ -z $(<"$LINKS_FILE") ]] && echo '-' && return 0
 
   tr '\n' ' ' <"$LINKS_FILE"
-}
-
-service_links() {
-  declare desc="list all apps linked to a service"
-  declare SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local LINKS_FILE="$SERVICE_ROOT/LINKS"
-
-  touch "$LINKS_FILE"
-  [[ -z $(<"$LINKS_FILE") ]] && return 0
-
-  cat "$LINKS_FILE"
-}
-
-service_list() {
-  declare desc="list all services and their status"
-
-  mapfile -t services < <(fn-services-list true)
-  if [[ "${#services[@]}" -eq 0 ]] || [[ -z "$services" ]]; then
-    dokku_log_warn "There are no $PLUGIN_SERVICE services"
-    return
-  fi
-
-  dokku_log_info2_quiet "$PLUGIN_SERVICE services"
-  for service in "${services[@]}"; do
-    echo "${service}"
-  done
-}
-
-service_logs() {
-  declare desc="display logs for a service"
-  declare SERVICE="$1" TAIL_FLAG="$2" TAIL_COUNT="$3"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local ID=$(cat "$SERVICE_ROOT/ID")
-  local RE_INTEGER='^[0-9]+$'
-
-  DOKKU_LOGS_ARGS="--tail $TAIL_COUNT"
-  if [[ "$TAIL_FLAG" == "-t" ]] || [[ "$TAIL_FLAG" == "--tail" ]]; then
-    DOKKU_LOGS_ARGS+=" --follow"
-  fi
-
-  "$DOCKER_BIN" container inspect "$ID" >/dev/null 2>&1 || dokku_log_fail "Service container does not exist"
-  is_container_status "$ID" "Running" || dokku_log_warn "Service logs may not be output as service is not running"
-
-  # shellcheck disable=SC2086
-  "$DOCKER_BIN" container logs $DOKKU_LOGS_ARGS "$ID" 2>&1
 }
 
 service_parse_args() {
@@ -821,61 +544,6 @@ service_password() {
   fi
 }
 
-service_root_password() {
-  declare desc="fetch the root password for a service"
-  declare SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local PASSWORD_FILE="$SERVICE_ROOT/ROOTPASSWORD"
-  if [[ -f "$PASSWORD_FILE" ]]; then
-    cat "$PASSWORD_FILE"
-  fi
-}
-
-service_port_expose() {
-  declare desc="wrapper for exposing service ports"
-  declare SERVICE="$1" PORTS=(${@:2})
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local PORT_FILE="$SERVICE_ROOT/PORT"
-  local SERVICE_NAME="$(get_service_name "$SERVICE")"
-  local EXPOSED_NAME="$SERVICE_NAME.ambassador"
-
-  if [[ ${#PORTS[@]} -eq 0 ]]; then
-    # shellcheck disable=SC2206
-    PORTS=(${PORTS[@]:-$(get_random_ports ${#PLUGIN_DATASTORE_PORTS[@]})})
-  fi
-
-  [[ "${#PORTS[@]}" != "${#PLUGIN_DATASTORE_PORTS[@]}" ]] && dokku_log_fail "${#PLUGIN_DATASTORE_PORTS[@]} ports to be exposed need to be provided in the following order: ${PLUGIN_DATASTORE_PORTS[*]}"
-
-  if [[ -s "$PORT_FILE" ]]; then
-    # shellcheck disable=SC2207
-    PORTS=($(cat "$PORT_FILE"))
-    dokku_log_fail "Service $SERVICE already exposed on port(s) ${PORTS[*]}"
-  fi
-
-  if "$DOCKER_BIN" container inspect "$EXPOSED_NAME" >/dev/null 2>&1; then
-    dokku_log_warn "Service $SERVICE has an untracked expose container, removing"
-    "$DOCKER_BIN" container stop "$EXPOSED_NAME" >/dev/null 2>&1 || true
-    suppress_output "$DOCKER_BIN" container rm "$EXPOSED_NAME"
-  fi
-
-  echo "${PORTS[@]}" >"$PORT_FILE"
-
-  service_start "$SERVICE" "true"
-  service_port_reconcile_status "$SERVICE"
-  dokku_log_info1 "Service $SERVICE exposed on port(s) [container->host]: $(service_exposed_ports "$SERVICE")"
-}
-
-service_port_unexpose() {
-  declare desc="wrapper for pausing exposed service ports"
-  declare SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local PORT_FILE="$SERVICE_ROOT/PORT"
-
-  rm -rf "$PORT_FILE"
-  service_port_reconcile_status "$SERVICE"
-  dokku_log_info1 "Service $SERVICE unexposed"
-}
-
 service_port_reconcile_status() {
   declare SERVICE="$1"
   local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
@@ -905,44 +573,6 @@ service_port_reconcile_status() {
   PORTS=($(cat "$PORT_FILE"))
   # shellcheck disable=SC2046
   "$DOCKER_BIN" container run -d --link "$SERVICE_NAME:$PLUGIN_COMMAND_PREFIX" --name "$EXPOSED_NAME" $(docker_ports_options "${PORTS[@]}") --restart always --label dokku=ambassador --label "dokku.ambassador=$PLUGIN_COMMAND_PREFIX" "$PLUGIN_AMBASSADOR_IMAGE" >/dev/null
-}
-
-service_promote() {
-  declare desc="promote a secondary service to the primary env var"
-  declare SERVICE="$1" APP="$2"
-  local PLUGIN_DEFAULT_CONFIG_VAR="${PLUGIN_DEFAULT_ALIAS}_URL"
-  local EXISTING_CONFIG=$(config_all "$APP")
-  update_plugin_scheme_for_app "$APP"
-  local SERVICE_URL=$(service_url "$SERVICE")
-  local CONFIG_VARS=($(echo "$EXISTING_CONFIG" | grep "$SERVICE_URL" | cut -d: -f1)) || true
-  local PREVIOUS_DEFAULT_URL=$(get_url_from_config "$EXISTING_CONFIG" "$PLUGIN_DEFAULT_CONFIG_VAR")
-
-  [[ -z ${CONFIG_VARS[*]} ]] && dokku_log_fail "Not linked to app $APP"
-  [[ ${CONFIG_VARS[*]} =~ $PLUGIN_DEFAULT_CONFIG_VAR ]] && dokku_log_fail "Service $1 already promoted as $PLUGIN_DEFAULT_CONFIG_VAR"
-
-  local NEW_CONFIG_VARS=""
-  if [[ -n $PREVIOUS_DEFAULT_URL ]]; then
-    local PREVIOUS_ALIAS=$(echo "$EXISTING_CONFIG" | grep "$PREVIOUS_DEFAULT_URL" | grep -v "$PLUGIN_DEFAULT_CONFIG_VAR") || true
-    if [[ -z $PREVIOUS_ALIAS ]]; then
-      local ALIAS=$(service_alternative_alias "$EXISTING_CONFIG")
-      NEW_CONFIG_VARS+="${ALIAS}_URL=$PREVIOUS_DEFAULT_URL "
-    fi
-  fi
-  local PROMOTE_URL=$(get_url_from_config "$EXISTING_CONFIG" "${CONFIG_VARS[0]}")
-  NEW_CONFIG_VARS+="$PLUGIN_DEFAULT_CONFIG_VAR=$PROMOTE_URL"
-
-  # shellcheck disable=SC2086
-  config_set "$APP" $NEW_CONFIG_VARS
-}
-
-service_set_alias() {
-  declare desc="sets the alias in use for a service"
-  declare SERVICE="$1" ALIAS="$2"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local ALIAS_FILE="$SERVICE_ROOT/ALIAS"
-
-  touch "$ALIAS_FILE"
-  echo "$ALIAS" >"$ALIAS_FILE"
 }
 
 service_status() {
@@ -977,52 +607,11 @@ service_pause() {
   fi
 }
 
-service_unlink() {
-  declare desc="unlink an application from a service"
-  declare SERVICE="$1" APP="$2"
-  update_plugin_scheme_for_app "$APP"
-  local SERVICE_URL=$(service_url "$SERVICE")
-  local SERVICE_NAME="$(get_service_name "$SERVICE")"
-  local EXISTING_CONFIG=$(config_all "$APP")
-  local SERVICE_DNS_HOSTNAME=$(service_dns_hostname "$SERVICE")
-  local LINK=($(echo "$EXISTING_CONFIG" | grep "$SERVICE_URL" | cut -d: -f1)) || true
-
-  plugn trigger service-action pre-unlink "$PLUGIN_COMMAND_PREFIX" "$SERVICE" "$APP"
-  remove_from_links_file "$SERVICE" "$APP"
-
-  if declare -f -F add_passed_docker_option >/dev/null; then
-    # shellcheck disable=SC2034
-    local passed_phases=(build deploy run)
-    remove_passed_docker_option passed_phases[@] "--link $SERVICE_NAME:$SERVICE_DNS_HOSTNAME"
-  else
-    dokku docker-options:remove "$APP" build,deploy,run "--link $SERVICE_NAME:$SERVICE_DNS_HOSTNAME"
-  fi
-
-  [[ -z ${LINK[*]} ]] && dokku_log_fail "Not linked to app $APP"
-  plugn trigger service-action post-unlink "$PLUGIN_COMMAND_PREFIX" "$SERVICE" "$APP"
-  if [[ "$DOKKU_GLOBAL_FLAGS" == *"--no-restart"* ]] || [[ "$SERVICE_RESTART_APPS" == "false" ]]; then
-    config_unset --no-restart "$APP" "${LINK[@]}"
-    dokku_log_verbose "Skipping restart of linked app"
-  else
-    config_unset "$APP" "${LINK[@]}"
-  fi
-  plugn trigger service-action post-unlink-complete "$PLUGIN_COMMAND_PREFIX" "$SERVICE" "$APP"
-}
-
 service_version() {
   declare desc="display the running version for an image"
   declare SERVICE="$1"
   local SERVICE_NAME="$(get_service_name "$SERVICE")"
   "$DOCKER_BIN" container inspect -f '{{.Config.Image}}' "$SERVICE_NAME" 2>/dev/null || true
-}
-
-update_plugin_scheme_for_app() {
-  declare desc="retrieve the updated plugin scheme"
-  declare APP="$1"
-  local DATABASE_SCHEME
-
-  DATABASE_SCHEME=$(config_get "$APP" "${PLUGIN_VARIABLE}_DATABASE_SCHEME" || true)
-  PLUGIN_SCHEME=${DATABASE_SCHEME:-$PLUGIN_SCHEME}
 }
 
 verify_service_name() {
