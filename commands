@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/config"
-[[ " help $PLUGIN_COMMAND_PREFIX:help $PLUGIN_COMMAND_PREFIX $PLUGIN_COMMAND_PREFIX:default " == *" $1 "* ]] || [[ "$1" == "$PLUGIN_COMMAND_PREFIX:"* ]] || exit "$DOKKU_NOT_IMPLEMENTED_EXIT"
+# dokku runs every plugin's commands script for any command it cannot dispatch
+# to a subcommand file, so this bows out before touching anything of ours
+[[ " help $PLUGIN_COMMAND_PREFIX $PLUGIN_COMMAND_PREFIX:default $PLUGIN_COMMAND_PREFIX:help " == *" $1 "* ]] || exit "$DOKKU_NOT_IMPLEMENTED_EXIT"
 
 set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/help-functions"
-
-fn-help "$@"
+# exec so that the binary sees the process that asked for the help, which is how
+# dokku help --all is told apart from dokku help
+exec "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" trigger-help "$PLUGIN_COMMAND_PREFIX" "$@"

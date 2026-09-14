@@ -4,14 +4,6 @@ set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
 service-logs-cmd() {
-  #E you can tail logs for a particular service:
-  #E dokku $PLUGIN_COMMAND_PREFIX:logs lollipop
-  #E by default, logs will not be tailed, but you can do this with the --tail flag:
-  #E dokku $PLUGIN_COMMAND_PREFIX:logs lollipop --tail
-  #E the default tail setting is to show all logs, but an initial count can also be specified
-  #E dokku $PLUGIN_COMMAND_PREFIX:logs lollipop --tail 5
-  #A service, service to run command against
-  #F -t|--tail [<tail-num>], do not stop when end of the logs are reached and wait for additional output
   declare desc="print the most recent log(s) for this service"
   local cmd="$PLUGIN_COMMAND_PREFIX:logs" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1

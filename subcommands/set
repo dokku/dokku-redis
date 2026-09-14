@@ -6,15 +6,6 @@ source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
 source "$(cd "$(dirname "$(dirname "${BASH_SOURCE[0]}")")" && pwd)/common-functions"
 
 service-set-cmd() {
-  #E set the network to attach after the service container is started
-  #E dokku $PLUGIN_COMMAND_PREFIX:set lollipop post-create-network custom-network
-  #E set multiple networks
-  #E dokku $PLUGIN_COMMAND_PREFIX:set lollipop post-create-network custom-network,other-network
-  #E unset the post-create-network value
-  #E dokku $PLUGIN_COMMAND_PREFIX:set lollipop post-create-network
-  #A service, service to run command against
-  #A key, property name to set
-  #A value, optional property value to set or empty to unset key
   declare desc="set or clear a property for a service"
   local cmd="$PLUGIN_COMMAND_PREFIX:set" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
