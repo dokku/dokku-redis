@@ -50,7 +50,7 @@ redis:set <service> <key> <value>                  # set or clear a property for
 redis:start <service>                              # start a previously stopped redis service
 redis:stop <service>                               # stop a running redis service
 redis:unexpose <service>                           # unexpose a previously exposed redis service
-redis:unlink <service> <app>                       # unlink the redis service from the app
+redis:unlink <service> <app> [--unlink-flags...]   # unlink the redis service from the app
 redis:upgrade <service> [--upgrade-flags...]       # upgrade service <service> to the specified versions
 ```
 
@@ -252,7 +252,7 @@ redis2://:SOME_PASSWORD@dokku-redis-lollipop:6379
 
 ```shell
 # usage
-dokku redis:unlink <service> <app>
+dokku redis:unlink <service> <app> [--unlink-flags...]
 ```
 
 flags:
