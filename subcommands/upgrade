@@ -2,7 +2,6 @@
 source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/config"
 set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
-source "$PLUGIN_AVAILABLE_PATH/ps/functions"
 
 service-upgrade-cmd() {
   #E you can upgrade an existing service to a new image or image-version
