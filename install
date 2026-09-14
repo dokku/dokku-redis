@@ -54,12 +54,22 @@ EOL
     ARCHITECTURE="arm64"
   fi
 
+  local DOKKU_DATASTORE_ROOT="${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}"
+  local DOKKU_DATASTORE_BINARY="${DOKKU_DATASTORE_ROOT}/dokku-datastore-${DOKKU_DATASTORE_VERSION}"
   local DOKKU_DATASTORE_URL="https://github.com/dokku/dokku-datastore/releases/download/${DOKKU_DATASTORE_VERSION}/dokku-datastore-linux-${ARCHITECTURE}"
-  if [[ ! -f "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore-${DOKKU_DATASTORE_VERSION}" ]]; then
+  if [[ ! -f "$DOKKU_DATASTORE_BINARY" ]]; then
     dokku_log_info1_quiet "Installing dokku-datastore@${DOKKU_DATASTORE_VERSION}"
-    curl -sL "${DOKKU_DATASTORE_URL}" -o "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore-${DOKKU_DATASTORE_VERSION}"
-    cp "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore-${DOKKU_DATASTORE_VERSION}" "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore"
-    chmod +x "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore"
+
+    # download to a temporary path so that a failed request cannot leave a file
+    # behind that the check above would take for an installed binary
+    if ! curl -sSL --fail "${DOKKU_DATASTORE_URL}" -o "${DOKKU_DATASTORE_BINARY}.download"; then
+      rm -f "${DOKKU_DATASTORE_BINARY}.download"
+      dokku_log_fail "Unable to download dokku-datastore@${DOKKU_DATASTORE_VERSION} from ${DOKKU_DATASTORE_URL}"
+    fi
+
+    mv "${DOKKU_DATASTORE_BINARY}.download" "$DOKKU_DATASTORE_BINARY"
+    cp "$DOKKU_DATASTORE_BINARY" "${DOKKU_DATASTORE_ROOT}/dokku-datastore"
+    chmod +x "${DOKKU_DATASTORE_ROOT}/dokku-datastore"
   fi
 
   for SERVICE in $(fn-services-list false); do
