@@ -135,18 +135,6 @@ is_implemented_command() {
   return 0
 }
 
-is_valid_service_name() {
-  declare desc="validate a service name"
-  declare SERVICE="$1"
-  [[ -z "$SERVICE" ]] && return 1
-
-  if [[ "$SERVICE" =~ ^[A-Za-z0-9_-]+$ ]]; then
-    return 0
-  fi
-
-  return 1
-}
-
 remove_from_links_file() {
   declare desc="remove an app from the service link file"
   declare SERVICE="$1" APP="$2"
@@ -159,77 +147,6 @@ remove_from_links_file() {
 
   sed -i.bak "/^$APP\$/d" "$LINKS_FILE" && rm "$LINKS_FILE.bak"
   sort "$LINKS_FILE" -u -o "$LINKS_FILE"
-}
-
-service_commit_config() {
-  declare SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local CONFIG_VARIABLE="${PLUGIN_VARIABLE}_CONFIG_OPTIONS"
-  local ENV_VARIABLE="${PLUGIN_VARIABLE}_CUSTOM_ENV"
-
-  custom_env="${!ENV_VARIABLE}"
-  [[ -n "$SERVICE_CUSTOM_ENV" ]] && custom_env="$SERVICE_CUSTOM_ENV"
-  if [[ -n $custom_env ]]; then
-    echo "$custom_env" | tr ';' "\n" >"$SERVICE_ROOT/ENV"
-  else
-    echo "" >"$SERVICE_ROOT/ENV"
-  fi
-
-  config_options="${!CONFIG_VARIABLE}"
-  [[ -n "$PLUGIN_CONFIG_OPTIONS" ]] && config_options="$PLUGIN_CONFIG_OPTIONS"
-  if [[ -n "$config_options" ]]; then
-    echo "$config_options" >"$SERVICE_ROOT/CONFIG_OPTIONS"
-  else
-    echo "" >"$SERVICE_ROOT/CONFIG_OPTIONS"
-  fi
-
-  if [[ -n "$SERVICE_MEMORY" ]]; then
-    echo "$SERVICE_MEMORY" >"$SERVICE_ROOT/SERVICE_MEMORY"
-  fi
-
-  if [[ -n "$SERVICE_SHM_SIZE" ]]; then
-    echo "$SERVICE_SHM_SIZE" >"$SERVICE_ROOT/SHM_SIZE"
-  fi
-
-  if [[ -n "$PLUGIN_IMAGE" ]]; then
-    echo "$PLUGIN_IMAGE" >"$SERVICE_ROOT/IMAGE"
-  fi
-
-  if [[ -n "$PLUGIN_IMAGE_VERSION" ]]; then
-    echo "$PLUGIN_IMAGE_VERSION" >"$SERVICE_ROOT/IMAGE_VERSION"
-  fi
-
-  if [[ -n "$SERVICE_INITIAL_NETWORK" ]]; then
-    fn-plugin-property-write "$PLUGIN_COMMAND_PREFIX" "$SERVICE" "initial-network" "$SERVICE_INITIAL_NETWORK"
-  fi
-
-  if [[ -n "$SERVICE_POST_CREATE_NETWORK" ]]; then
-    fn-plugin-property-write "$PLUGIN_COMMAND_PREFIX" "$SERVICE" "post-create-network" "$SERVICE_POST_CREATE_NETWORK"
-  fi
-
-  if [[ -n "$SERVICE_POST_START_NETWORK" ]]; then
-    fn-plugin-property-write "$PLUGIN_COMMAND_PREFIX" "$SERVICE" "post-start-network" "$SERVICE_POST_START_NETWORK"
-  fi
-}
-
-service_container_rm() {
-  declare desc="stop a service and remove the running container"
-  declare SERVICE="$1"
-  local SERVICE_NAME="$(get_service_name "$SERVICE")"
-  local ID
-
-  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" pause "$PLUGIN_COMMAND_PREFIX" "$SERVICE"
-  ID=$("$DOCKER_BIN" container ps -aq --no-trunc --filter "name=^/$SERVICE_NAME$") || true
-  # this may be 'true' in tests...
-  if [[ -z "$ID" ]] || [[ "$ID" == "true" ]]; then
-    return 0
-  fi
-
-  dokku_log_verbose_quiet "Removing container"
-  "$DOCKER_BIN" container update --restart=no "$SERVICE_NAME" >/dev/null 2>&1
-  if ! "$DOCKER_BIN" container rm "$SERVICE_NAME" >/dev/null 2>&1; then
-    dokku_log_fail "Unable to remove container for service $SERVICE"
-  fi
 }
 
 service_dns_hostname() {
@@ -268,18 +185,6 @@ service_image_exists() {
   fi
 
   return 0
-}
-
-service_linked_apps() {
-  declare desc="list all apps linked to a service for info output"
-  declare SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local LINKS_FILE="$SERVICE_ROOT/LINKS"
-
-  touch "$LINKS_FILE"
-  [[ -z $(<"$LINKS_FILE") ]] && echo '-' && return 0
-
-  tr '\n' ' ' <"$LINKS_FILE"
 }
 
 service_parse_args() {
@@ -372,16 +277,6 @@ service_parse_args() {
   shift "$((OPTIND - 1))" # remove options from positional parameters
 }
 
-service_password() {
-  declare desc="fetch the password for a service"
-  declare SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local PASSWORD_FILE="$SERVICE_ROOT/PASSWORD"
-  if [[ -f "$PASSWORD_FILE" ]]; then
-    cat "$PASSWORD_FILE"
-  fi
-}
-
 service_port_reconcile_status() {
   declare SERVICE="$1"
   local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
@@ -452,12 +347,3 @@ verify_service_name() {
   return 0
 }
 
-write_database_name() {
-  declare desc="write a sanitized database name"
-  declare SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-
-  # some datastores do not like special characters in database names
-  # so we need to normalize them out
-  echo "$SERVICE" | tr .- _ >"$SERVICE_ROOT/DATABASE_NAME"
-}

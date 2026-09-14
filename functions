@@ -10,66 +10,6 @@ if [[ -f "$PLUGIN_AVAILABLE_PATH/docker-options/functions" ]]; then
   source "$PLUGIN_AVAILABLE_PATH/docker-options/functions"
 fi
 
-service_connect() {
-  local SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local SERVICE_NAME="$(get_service_name "$SERVICE")"
-  local PASSWORD="$(service_password "$SERVICE")"
-  local SERVICE_TTY_OPTS
-  has_tty && SERVICE_TTY_OPTS="-t"
-
-  "$DOCKER_BIN" container exec --env=LANG=C.UTF-8 --env=LC_ALL=C.UTF-8 -i $SERVICE_TTY_OPTS "$SERVICE_NAME" redis-cli -a "$PASSWORD"
-}
-
-service_create() {
-  local SERVICE="$1"
-  is_valid_service_name "$SERVICE" || dokku_log_fail "Please specify a valid name for the service. Valid characters are: [A-Za-z0-9_]+"
-  [[ -z "$SERVICE" ]] && dokku_log_fail "Please specify a valid name for the service"
-  [[ ! -d "$PLUGIN_DATA_ROOT/$SERVICE" ]] || dokku_log_fail "$PLUGIN_SERVICE service $SERVICE already exists"
-  SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  LINKS_FILE="$SERVICE_ROOT/LINKS"
-
-  service_parse_args "${@:2}"
-
-  if ! service_image_exists "$SERVICE"; then
-    if [[ "$PLUGIN_DISABLE_PULL" == "true" ]]; then
-      dokku_log_warn "${PLUGIN_DISABLE_PULL_VARIABLE} environment variable detected. Not running pull command." 1>&2
-      dokku_log_warn "   docker image pull ${IMAGE}" 1>&2
-      dokku_log_warn "$PLUGIN_SERVICE service creation failed"
-      exit 1
-    fi
-    "$DOCKER_BIN" image pull "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" || dokku_log_fail "$PLUGIN_SERVICE image $PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION pull failed"
-  fi
-
-  plugn trigger service-action pre-create "$PLUGIN_COMMAND_PREFIX" "$SERVICE"
-  mkdir -p "$SERVICE_ROOT" || dokku_log_fail "Unable to create service directory"
-  mkdir -p "$SERVICE_ROOT/data" || dokku_log_fail "Unable to create service data directory"
-  mkdir -p "$SERVICE_ROOT/$PLUGIN_CONFIG_SUFFIX" || dokku_log_fail "Unable to create service config directory"
-  touch "$LINKS_FILE"
-
-  REDIS_SERVICE_CONFIG="$SERVICE_ROOT/$PLUGIN_CONFIG_SUFFIX/redis.conf"
-
-  if [[ -z $REDIS_CONFIG_PATH ]]; then
-    echo "# requirepass" > $REDIS_SERVICE_CONFIG
-  else
-    cp "$REDIS_CONFIG_PATH" "$REDIS_SERVICE_CONFIG" || dokku_log_fail "Unable to copy the ${REDIS_CONFIG_PATH} to the config directory"
-  fi
-  PASSWORD=$(openssl rand -hex 32)
-  if [[ -n "$SERVICE_PASSWORD" ]]; then
-    PASSWORD="$SERVICE_PASSWORD"
-    dokku_log_warn "Specified password may not be as secure as the auto-generated password"
-  fi
-  echo "$PASSWORD" >"$SERVICE_ROOT/PASSWORD"
-  chmod 640 "$SERVICE_ROOT/PASSWORD"
-  sed -i.bak "s/# requirepass.*/requirepass ${PASSWORD}/" "$REDIS_SERVICE_CONFIG" && rm "$SERVICE_ROOT/$PLUGIN_CONFIG_SUFFIX/redis.conf.bak"
-
-  service_commit_config "$SERVICE"
-  write_database_name "$SERVICE"
-  plugn trigger service-action post-create "$PLUGIN_COMMAND_PREFIX" "$SERVICE"
-  service_create_container "$SERVICE"
-  plugn trigger service-action post-create-complete "$PLUGIN_COMMAND_PREFIX" "$SERVICE"
-}
-
 service_create_container() {
   local SERVICE="$1"
   local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"

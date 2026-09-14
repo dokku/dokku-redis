@@ -24,53 +24,7 @@ service-upgrade-cmd() {
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare SERVICE="$1" UPGRADE_FLAGS_LIST=("${@:2}")
 
-  [[ -z "$SERVICE" ]] && dokku_log_fail "Please specify a valid name for the service"
-  verify_service_name "$SERVICE"
-
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-
-  service_parse_args "${@:2}"
-
-  if ! service_image_exists "$SERVICE" "$PLUGIN_IMAGE" "$PLUGIN_IMAGE_VERSION"; then
-    if [[ "$PLUGIN_DISABLE_PULL" == "true" ]]; then
-      dokku_log_warn "${PLUGIN_DISABLE_PULL_VARIABLE} environment variable detected. Not running pull command." 1>&2
-      dokku_log_warn "   docker image pull ${IMAGE}" 1>&2
-      dokku_log_warn "$PLUGIN_SERVICE service $SERVICE upgrade failed"
-      exit 1
-    fi
-    "$DOCKER_BIN" image pull "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" || dokku_log_fail "$PLUGIN_SERVICE image $PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION pull failed"
-  fi
-
-  local NEW_PLUGIN_IMAGE_TAG="$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION"
-  if [[ "$(service_version "$SERVICE")" == "$NEW_PLUGIN_IMAGE_TAG" ]]; then
-    dokku_log_info1 "Service $SERVICE already running $NEW_PLUGIN_IMAGE_TAG"
-    return
-  fi
-
-  service_commit_config "$SERVICE"
-
-  dokku_log_info2 "Upgrading $SERVICE to $NEW_PLUGIN_IMAGE_TAG"
-  if [[ "$SERVICE_RESTART_APPS" == "true" ]]; then
-    dokku_log_info2 "Stopping all linked services"
-    for app in $(service_linked_apps "$SERVICE"); do
-      [[ "$app" == "-" ]] && continue
-      ps_stop "$app"
-    done
-  fi
-
-  dokku_log_info2 "Stopping $SERVICE"
-  service_container_rm "$SERVICE"
-  service_start "$SERVICE" "${@:2}"
-
-  if [[ "$SERVICE_RESTART_APPS" == "true" ]]; then
-    dokku_log_info2 "Starting all linked services"
-    for app in $(service_linked_apps "$SERVICE"); do
-      [[ "$app" == "-" ]] && continue
-      ps_start "$app"
-    done
-  fi
-
-  dokku_log_info2 "Done"
+  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" upgrade "$PLUGIN_COMMAND_PREFIX" "$@"
 }
 
 service-upgrade-cmd "$@"

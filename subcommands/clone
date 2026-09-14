@@ -44,7 +44,7 @@ service-clone-cmd() {
   service_parse_args "${@:3}"
 
   dokku_log_info2 "Cloning $SERVICE to $NEW_SERVICE @ $PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION"
-  service_create "$NEW_SERVICE" "${@:3}"
+  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" create "$PLUGIN_COMMAND_PREFIX" "$NEW_SERVICE" --image "$PLUGIN_IMAGE" --image-version "$PLUGIN_IMAGE_VERSION" "${@:3}"
   dokku_log_info1 "Copying data from $SERVICE to $NEW_SERVICE"
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" export "$PLUGIN_COMMAND_PREFIX" "$SERVICE" | "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" import "$PLUGIN_COMMAND_PREFIX" "$NEW_SERVICE" >/dev/null 2>&1 || true
   dokku_log_info2 "Done"
