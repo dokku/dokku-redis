@@ -5,79 +5,6 @@ set -eo pipefail
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
 source "$PLUGIN_AVAILABLE_PATH/config/functions"
 
-auth_service_filter() {
-  declare desc="calls user-service plugin trigger"
-  declare SERVICES=("$@")
-  local user_auth_count
-
-  if [[ "${#SERVICES[@]}" -eq 0 ]]; then
-    return
-  fi
-
-  user_auth_count="$(find "$PLUGIN_PATH"/enabled/*/user-auth-service 2>/dev/null | wc -l)"
-
-  # no plugin trigger exists
-  if [[ $user_auth_count == 0 ]]; then
-    # echo out all the services since there is no plugin trigger
-    for SERVICE in "${SERVICES[@]}"; do
-      [[ -n "$SERVICE" ]] && echo "$SERVICE"
-    done
-    return 0
-  fi
-
-  # this plugin trigger exists in the core `20_events` plugin
-  if [[ "$user_auth_count" == 1 ]] && [[ -f "$PLUGIN_PATH"/enabled/20_events/user-auth-service ]]; then
-    # echo out all the services since there is no valid plugin trigger
-    for SERVICE in "${SERVICES[@]}"; do
-      [[ -n "$SERVICE" ]] && echo "$SERVICE"
-    done
-    return 0
-  fi
-
-  export SSH_USER=${SSH_USER:=$USER}
-  export SSH_NAME=${NAME:="default"}
-  # the output of this trigger should be all the services a user has access to
-  plugn trigger user-auth-service "$SSH_USER" "$SSH_NAME" "$PLUGIN_COMMAND_PREFIX" "${SERVICES[@]}"
-}
-
-fn-services-list() {
-  declare desc="prints a filtered list of all local apps"
-  declare FILTER="$1"
-  local services=()
-
-  pushd "$PLUGIN_DATA_ROOT" >/dev/null
-  for f in *; do
-    [[ -d $f ]] || continue
-    services+=("$f")
-  done
-  popd >/dev/null 2>&1 || pushd "/tmp" >/dev/null
-
-  if [[ "${#services[@]}" -eq 0 ]]; then
-    return
-  fi
-
-  if [[ "$FILTER" == "false" ]]; then
-    for service in "${services[@]}"; do
-      if [[ -n "$service" ]]; then
-        echo "$service"
-      fi
-    done
-    return
-  fi
-
-  for service in $(auth_service_filter "${services[@]}" 2>/dev/null); do
-    if [[ -n "$service" ]]; then
-      echo "$service"
-    fi
-  done
-}
-
-get_service_name() {
-  declare desc="retrieve a docker service label"
-  declare SERVICE="$1"
-  echo "dokku.${PLUGIN_COMMAND_PREFIX}.$SERVICE"
-}
-
 is_implemented_command() {
   declare desc="return true if value ($1) is in list (all other arguments)"
   declare CMD="$1"
@@ -92,12 +19,5 @@ is_implemented_command() {
     [[ "$e" == "$CMD" ]] && return 1
   done
   return 0
-}
-
-service_version() {
-  declare desc="display the running version for an image"
-  declare SERVICE="$1"
-  local SERVICE_NAME="$(get_service_name "$SERVICE")"
-  "$DOCKER_BIN" container inspect -f '{{.Config.Image}}' "$SERVICE_NAME" 2>/dev/null || true
 }
 

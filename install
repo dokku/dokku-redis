@@ -6,49 +6,6 @@ set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
 plugin-install() {
-  pull-docker-image() {
-    declare IMAGE="$1"
-    if [[ "$PLUGIN_DISABLE_PULL" == "true" ]]; then
-      echo " !     ${PLUGIN_DISABLE_PULL_VARIABLE} environment variable detected. Not running pull command." 1>&2
-      echo " !        docker image pull ${IMAGE}" 1>&2
-      return
-    fi
-    if [[ "$("$DOCKER_BIN" image ls -q "${IMAGE}" 2>/dev/null)" == "" ]]; then
-      "$DOCKER_BIN" image pull "${IMAGE}"
-    fi
-  }
-
-  fn-plugin-property-setup "$PLUGIN_COMMAND_PREFIX"
-  pull-docker-image "${PLUGIN_IMAGE}:${PLUGIN_IMAGE_VERSION}"
-  pull-docker-image "$PLUGIN_BUSYBOX_IMAGE"
-  pull-docker-image "$PLUGIN_AMBASSADOR_IMAGE"
-  pull-docker-image "$PLUGIN_S3BACKUP_IMAGE"
-  pull-docker-image "$PLUGIN_WAIT_IMAGE"
-
-  mkdir -p "$PLUGIN_DATA_ROOT" || echo "Failed to create $PLUGIN_SERVICE service data directory"
-  chown "${DOKKU_SYSTEM_USER}:${DOKKU_SYSTEM_GROUP}" "$PLUGIN_DATA_ROOT"
-
-  mkdir -p "$PLUGIN_CONFIG_ROOT" || echo "Failed to create $PLUGIN_SERVICE plugin config directory"
-  chown "${DOKKU_SYSTEM_USER}:${DOKKU_SYSTEM_GROUP}" "$PLUGIN_CONFIG_ROOT"
-
-  mkdir -p "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}" || echo "Failed to create ${PLUGIN_COMMAND_PREFIX} plugin data directory"
-  chown -R "${DOKKU_SYSTEM_USER}:${DOKKU_SYSTEM_GROUP}" "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}"
-
-  rm -f "/etc/sudoers.d/dokku-${PLUGIN_COMMAND_PREFIX}*"
-  _SUDOERS_FILE="/etc/sudoers.d/dokku-${PLUGIN_COMMAND_PREFIX}"
-
-  touch "$_SUDOERS_FILE"
-  cat >"$_SUDOERS_FILE" <<EOL
-%dokku ALL=(ALL) NOPASSWD:/bin/rm -f /etc/cron.d/dokku-${PLUGIN_COMMAND_PREFIX}-*
-%dokku ALL=(ALL) NOPASSWD:/bin/chown root\:root /etc/cron.d/dokku-${PLUGIN_COMMAND_PREFIX}-*
-%dokku ALL=(ALL) NOPASSWD:/bin/chmod 644 /etc/cron.d/dokku-${PLUGIN_COMMAND_PREFIX}-*
-%dokku ALL=(ALL) NOPASSWD:/bin/mv ${PLUGIN_DATA_ROOT}/.TMP_CRON_FILE /etc/cron.d/dokku-${PLUGIN_COMMAND_PREFIX}-*
-%dokku ALL=(ALL) NOPASSWD:/bin/chown 8983 $PLUGIN_DATA_ROOT/*
-%dokku ALL=(ALL) NOPASSWD:/bin/chgrp 8983 $PLUGIN_DATA_ROOT/*
-EOL
-
-  chmod 0440 "$_SUDOERS_FILE"
-
   local ARCHITECTURE="amd64"
   if [[ "$(uname -m)" == "aarch64" ]]; then
     ARCHITECTURE="arm64"
@@ -57,6 +14,12 @@ EOL
   local DOKKU_DATASTORE_ROOT="${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}"
   local DOKKU_DATASTORE_BINARY="${DOKKU_DATASTORE_ROOT}/dokku-datastore-${DOKKU_DATASTORE_VERSION}"
   local DOKKU_DATASTORE_URL="https://github.com/dokku/dokku-datastore/releases/download/${DOKKU_DATASTORE_VERSION}/dokku-datastore-linux-${ARCHITECTURE}"
+
+  # the binary has to be in place before anything else, because the rest of the
+  # install is the binary's own trigger-install command
+  mkdir -p "$DOKKU_DATASTORE_ROOT" || dokku_log_fail "Unable to create the ${PLUGIN_COMMAND_PREFIX} plugin data directory"
+  chown -R "${DOKKU_SYSTEM_USER}:${DOKKU_SYSTEM_GROUP}" "$DOKKU_DATASTORE_ROOT"
+
   if [[ ! -f "$DOKKU_DATASTORE_BINARY" ]]; then
     dokku_log_info1_quiet "Installing dokku-datastore@${DOKKU_DATASTORE_VERSION}"
 
@@ -68,28 +31,11 @@ EOL
     fi
 
     mv "${DOKKU_DATASTORE_BINARY}.download" "$DOKKU_DATASTORE_BINARY"
-    cp "$DOKKU_DATASTORE_BINARY" "${DOKKU_DATASTORE_ROOT}/dokku-datastore"
-    chmod +x "${DOKKU_DATASTORE_ROOT}/dokku-datastore"
   fi
 
-  for SERVICE in $(fn-services-list false); do
-    local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
+  cp "$DOKKU_DATASTORE_BINARY" "${DOKKU_DATASTORE_ROOT}/dokku-datastore"
+  chmod +x "${DOKKU_DATASTORE_ROOT}/dokku-datastore"
 
-    if [[ ! -f "$SERVICE_ROOT/IMAGE" ]] || [[ ! -f "$SERVICE_ROOT/IMAGE_VERSION" ]]; then
-      local image="$(service_version "$SERVICE")"
-      if [[ "$image" == *":"* ]]; then
-        echo "${image%:*}" >"$SERVICE_ROOT/IMAGE"
-        echo "${image##*:}" >"$SERVICE_ROOT/IMAGE_VERSION"
-      fi
-    fi
-
-    chown "${DOKKU_SYSTEM_USER}:${DOKKU_SYSTEM_GROUP}" "$SERVICE_ROOT/IMAGE" "$SERVICE_ROOT/IMAGE_VERSION"
-
-    if [[ -f "$SERVICE_ROOT/${PLUGIN_VARIABLE}_CONFIG_OPTIONS" ]]; then
-      mv "$SERVICE_ROOT/${PLUGIN_VARIABLE}_CONFIG_OPTIONS" "$SERVICE_ROOT/CONFIG_OPTIONS"
-      chown "${DOKKU_SYSTEM_USER}:${DOKKU_SYSTEM_GROUP}" "$SERVICE_ROOT/CONFIG_OPTIONS"
-    fi
-  done
+  "${DOKKU_DATASTORE_ROOT}/dokku-datastore" trigger-install "$PLUGIN_COMMAND_PREFIX"
 }
-
 plugin-install "$@"
