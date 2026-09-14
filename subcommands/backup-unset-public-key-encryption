@@ -15,9 +15,7 @@ service-backup-unset-public-key-encryption-cmd() {
   declare SERVICE="$1"
   is_implemented_command "$cmd" || dokku_log_fail "Not yet implemented"
 
-  [[ -z "$SERVICE" ]] && dokku_log_fail "Please specify a valid name for the service"
-  verify_service_name "$SERVICE"
-  service_backup_unset_public_key_encryption "$SERVICE"
+  "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" backup-unset-public-key-encryption "$PLUGIN_COMMAND_PREFIX" "$@"
 }
 
 service-backup-unset-public-key-encryption-cmd "$@"
