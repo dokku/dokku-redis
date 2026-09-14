@@ -12,12 +12,24 @@ plugin-install() {
 
   local DOKKU_DATASTORE_ROOT="${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}"
   local DOKKU_DATASTORE_BINARY="${DOKKU_DATASTORE_ROOT}/dokku-datastore-${DOKKU_DATASTORE_VERSION}"
+  local DOKKU_DATASTORE_LOCAL="${DOKKU_DATASTORE_ROOT}/dokku-datastore.local"
   local DOKKU_DATASTORE_URL="https://github.com/dokku/dokku-datastore/releases/download/${DOKKU_DATASTORE_VERSION}/dokku-datastore-linux-${ARCHITECTURE}"
 
   # the binary has to be in place before anything else, because the rest of the
   # install is the binary's own trigger-install command
   mkdir -p "$DOKKU_DATASTORE_ROOT" || dokku_log_fail "Unable to create the ${PLUGIN_COMMAND_PREFIX} plugin data directory"
   chown -R "${DOKKU_SYSTEM_USER}:${DOKKU_SYSTEM_GROUP}" "$DOKKU_DATASTORE_ROOT"
+
+  # a binary staged here wins over the pinned release, so that an unreleased
+  # build can be tested against this plugin. stage one with
+  # `make setup DOKKU_DATASTORE_BINARY=/path/to/dokku-datastore`
+  if [[ -x "$DOKKU_DATASTORE_LOCAL" ]]; then
+    dokku_log_info1_quiet "Installing dokku-datastore from ${DOKKU_DATASTORE_LOCAL}"
+    cp "$DOKKU_DATASTORE_LOCAL" "${DOKKU_DATASTORE_ROOT}/dokku-datastore"
+    chmod +x "${DOKKU_DATASTORE_ROOT}/dokku-datastore"
+    "${DOKKU_DATASTORE_ROOT}/dokku-datastore" trigger-install "$PLUGIN_COMMAND_PREFIX"
+    return
+  fi
 
   if [[ ! -f "$DOKKU_DATASTORE_BINARY" ]]; then
     dokku_log_info1_quiet "Installing dokku-datastore@${DOKKU_DATASTORE_VERSION}"
