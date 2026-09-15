@@ -78,3 +78,23 @@ teardown() {
   assert_output_contains "Skipping restart of linked app"
   assert_success
 }
+
+@test "($PLUGIN_COMMAND_PREFIX:unlink) removes a link to a deleted app" {
+  # a second app, so that deleting it out from under dokku does not disturb the
+  # my-app the shared teardown destroys
+  dokku apps:create ghost-app
+  dokku "$PLUGIN_COMMAND_PREFIX:link" ls ghost-app --no-restart >&2
+  delete_app_without_unlinking ghost-app
+
+  # unlink is the only command that can take a name out of the links file, and
+  # destroy refuses while the file names an app, so refusing here would leave
+  # the service impossible to delete and its data impossible to recover
+  run dokku "$PLUGIN_COMMAND_PREFIX:unlink" ls ghost-app --no-restart
+  echo "output: $output"
+  echo "status: $status"
+  assert_success
+
+  run sudo cat "$PLUGIN_DATA_ROOT/ls/LINKS"
+  echo "output: $output"
+  assert_not_contains "${lines[*]}" "ghost-app"
+}

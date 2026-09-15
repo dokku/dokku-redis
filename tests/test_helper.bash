@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 export DOKKU_LIB_ROOT="/var/lib/dokku"
+export DOKKU_ROOT="${DOKKU_ROOT:-/home/dokku}"
 source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/config"
 
 flunk() {
@@ -51,6 +52,13 @@ assert_exists() {
   if [ ! -f "$1" ]; then
     flunk "expected file to exist: $1"
   fi
+}
+
+# delete_app_without_unlinking removes an app the way it disappears when this
+# plugin cannot see it go: disabled at the time, or removed outside dokku. The
+# link is left naming an app that is not there.
+delete_app_without_unlinking() {
+  sudo rm -rf "${DOKKU_ROOT:?}/${1:?}"
 }
 
 assert_not_exists() {
