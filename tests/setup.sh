@@ -30,4 +30,14 @@ sudo find ./ -maxdepth 1 -type f -exec cp '{}' "$DOKKU_PLUGINS_ROOT/$PLUGIN_COMM
 [[ -d "./templates" ]] && sudo find ./templates -maxdepth 1 -type f -exec cp '{}' "$DOKKU_PLUGINS_ROOT/$PLUGIN_COMMAND_PREFIX/templates" \;
 sudo mkdir -p "$PLUGIN_CONFIG_ROOT" "$PLUGIN_DATA_ROOT"
 sudo dokku plugin:enable "$PLUGIN_COMMAND_PREFIX"
+
+# stage a locally built dokku-datastore so that an unreleased build can be
+# tested against this plugin, rather than the version pinned in config
+if [[ -n "$DOKKU_DATASTORE_BINARY" ]]; then
+  echo "Staging dokku-datastore from $DOKKU_DATASTORE_BINARY"
+  sudo mkdir -p "$DOKKU_LIB_ROOT/data/$PLUGIN_COMMAND_PREFIX"
+  sudo cp "$DOKKU_DATASTORE_BINARY" "$DOKKU_LIB_ROOT/data/$PLUGIN_COMMAND_PREFIX/dokku-datastore.local"
+  sudo chmod +x "$DOKKU_LIB_ROOT/data/$PLUGIN_COMMAND_PREFIX/dokku-datastore.local"
+fi
+
 sudo dokku plugin:install

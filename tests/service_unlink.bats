@@ -7,8 +7,9 @@ setup() {
 }
 
 teardown() {
-  dokku --force "$PLUGIN_COMMAND_PREFIX:destroy" ls
-  dokku --force apps:destroy my-app
+  clear_links ls
+  dokku "$PLUGIN_COMMAND_PREFIX:destroy" ls -f
+  dokku apps:destroy my-app --force
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:unlink) error when there are no arguments" {
@@ -40,11 +41,11 @@ teardown() {
   link_option="--link dokku.$PLUGIN_COMMAND_PREFIX.ls:dokku-$PLUGIN_COMMAND_PREFIX-ls"
 
   dokku "$PLUGIN_COMMAND_PREFIX:link" ls my-app >&2
-  options=$(dokku --quiet docker-options:report my-app | xargs)
+  options=$(dokku docker-options:report my-app --format json)
   assert_contains "$options" "$link_option"
 
   dokku "$PLUGIN_COMMAND_PREFIX:unlink" ls my-app
-  options=$(dokku --quiet docker-options:report my-app | xargs)
+  options=$(dokku docker-options:report my-app --format json)
   assert_not_contains "$options" "$link_option"
 }
 
@@ -77,4 +78,24 @@ teardown() {
   echo "status: $status"
   assert_output_contains "Skipping restart of linked app"
   assert_success
+}
+
+@test "($PLUGIN_COMMAND_PREFIX:unlink) removes a link to a deleted app" {
+  # a second app, so that deleting it out from under dokku does not disturb the
+  # my-app the shared teardown destroys
+  dokku apps:create ghost-app
+  dokku "$PLUGIN_COMMAND_PREFIX:link" ls ghost-app --no-restart >&2
+  delete_app_without_unlinking ghost-app
+
+  # unlink is the only command that can take a name out of the links file, and
+  # destroy refuses while the file names an app, so refusing here would leave
+  # the service impossible to delete and its data impossible to recover
+  run dokku "$PLUGIN_COMMAND_PREFIX:unlink" ls ghost-app --no-restart
+  echo "output: $output"
+  echo "status: $status"
+  assert_success
+
+  run sudo cat "$PLUGIN_DATA_ROOT/ls/LINKS"
+  echo "output: $output"
+  assert_not_contains "${lines[*]}" "ghost-app"
 }

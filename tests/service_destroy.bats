@@ -3,13 +3,14 @@ load test_helper
 
 teardown() {
   dokku "$PLUGIN_COMMAND_PREFIX:unlink" l app || true
-  dokku --force "$PLUGIN_COMMAND_PREFIX:destroy" l || true
-  dokku --force apps:destroy app || true
+  clear_links l
+  dokku "$PLUGIN_COMMAND_PREFIX:destroy" l -f || true
+  dokku apps:destroy app --force || true
 }
 
-@test "($PLUGIN_COMMAND_PREFIX:destroy) success with --force" {
+@test "($PLUGIN_COMMAND_PREFIX:destroy) success with -f" {
   dokku "$PLUGIN_COMMAND_PREFIX:create" l
-  run dokku --force "$PLUGIN_COMMAND_PREFIX:destroy" l
+  run dokku "$PLUGIN_COMMAND_PREFIX:destroy" l -f
   assert_contains "${lines[*]}" "container deleted: l"
 }
 
@@ -27,10 +28,24 @@ teardown() {
   dokku "$PLUGIN_COMMAND_PREFIX:create" l
   dokku apps:create app
   dokku "$PLUGIN_COMMAND_PREFIX:link" l app
-  run dokku --force "$PLUGIN_COMMAND_PREFIX:destroy" l
+  run dokku "$PLUGIN_COMMAND_PREFIX:destroy" l -f
   assert_contains "${lines[*]}" "Cannot delete linked service"
 
   dokku "$PLUGIN_COMMAND_PREFIX:unlink" l app
-  run dokku --force "$PLUGIN_COMMAND_PREFIX:destroy" l
+  run dokku "$PLUGIN_COMMAND_PREFIX:destroy" l -f
+  assert_contains "${lines[*]}" "container deleted: l"
+}
+
+@test "($PLUGIN_COMMAND_PREFIX:destroy) success when the only linked app is gone" {
+  dokku "$PLUGIN_COMMAND_PREFIX:create" l
+  dokku apps:create app
+  dokku "$PLUGIN_COMMAND_PREFIX:link" l app
+  delete_app_without_unlinking app
+
+  # the guard is here to stop a datastore being deleted while an app is using
+  # it, and an app that no longer exists is not using anything
+  run dokku "$PLUGIN_COMMAND_PREFIX:destroy" l -f
+  echo "output: $output"
+  echo "status: $status"
   assert_contains "${lines[*]}" "container deleted: l"
 }
