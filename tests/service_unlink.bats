@@ -7,8 +7,8 @@ setup() {
 }
 
 teardown() {
-  dokku --force "$PLUGIN_COMMAND_PREFIX:destroy" ls
-  dokku --force apps:destroy my-app
+  dokku "$PLUGIN_COMMAND_PREFIX:destroy" ls -f
+  dokku apps:destroy my-app --force
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:unlink) error when there are no arguments" {
@@ -40,11 +40,11 @@ teardown() {
   link_option="--link dokku.$PLUGIN_COMMAND_PREFIX.ls:dokku-$PLUGIN_COMMAND_PREFIX-ls"
 
   dokku "$PLUGIN_COMMAND_PREFIX:link" ls my-app >&2
-  options=$(dokku --quiet docker-options:report my-app | xargs)
+  options=$(dokku docker-options:report my-app --format json)
   assert_contains "$options" "$link_option"
 
   dokku "$PLUGIN_COMMAND_PREFIX:unlink" ls my-app
-  options=$(dokku --quiet docker-options:report my-app | xargs)
+  options=$(dokku docker-options:report my-app --format json)
   assert_not_contains "$options" "$link_option"
 }
 
