@@ -132,6 +132,21 @@ authenticate() {
   assert_output "root root 644"
 }
 
+@test "($PLUGIN_COMMAND_PREFIX:backup-schedule) leaves no staged file behind" {
+  authenticate
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:backup-schedule" ls "0 3 * * *" "$RUSTFS_BUCKET"
+  echo "output: $output"
+  echo "status: $status"
+  assert_success
+
+  # the entry is staged before a root owned helper moves it into place. It is
+  # staged inside the service, because the directory beside it is the one the
+  # listing enumerates to find services.
+  assert_not_exists "$PLUGIN_DATA_ROOT/ls/.TMP_CRON_FILE"
+  assert_not_exists "$PLUGIN_DATA_ROOT/.TMP_CRON_FILE"
+}
+
 @test "($PLUGIN_COMMAND_PREFIX:backup-schedule-cat) prints the scheduled entry" {
   authenticate
   dokku "$PLUGIN_COMMAND_PREFIX:backup-schedule" ls "0 3 * * *" "$RUSTFS_BUCKET"

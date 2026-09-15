@@ -53,6 +53,12 @@ assert_exists() {
   fi
 }
 
+assert_not_exists() {
+  if [ -e "$1" ]; then
+    flunk "expected file not to exist: $1"
+  fi
+}
+
 assert_contains() {
   if [[ "$1" != *"$2"* ]]; then
     flunk "expected $2 to be in: $1"
