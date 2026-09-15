@@ -61,6 +61,15 @@ delete_app_without_unlinking() {
   sudo rm -rf "${DOKKU_ROOT:?}/${1:?}"
 }
 
+# clear_links removes a service's links file. A link naming an app that was
+# deleted out from under dokku blocks destroy, so a test that arranges one has
+# to be able to tear it down even on a build where the behaviour it asserts is
+# missing. Without this, one failing test leaves a service no later test can
+# create.
+clear_links() {
+  sudo rm -f "$PLUGIN_DATA_ROOT/${1:?}/LINKS"
+}
+
 assert_not_exists() {
   if [ -e "$1" ]; then
     flunk "expected file not to exist: $1"

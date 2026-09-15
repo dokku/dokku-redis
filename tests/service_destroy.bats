@@ -3,6 +3,7 @@ load test_helper
 
 teardown() {
   dokku "$PLUGIN_COMMAND_PREFIX:unlink" l app || true
+  clear_links l
   dokku "$PLUGIN_COMMAND_PREFIX:destroy" l -f || true
   dokku apps:destroy app --force || true
 }

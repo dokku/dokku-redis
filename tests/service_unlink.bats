@@ -7,6 +7,7 @@ setup() {
 }
 
 teardown() {
+  clear_links ls
   dokku "$PLUGIN_COMMAND_PREFIX:destroy" ls -f
   dokku apps:destroy my-app --force
 }
