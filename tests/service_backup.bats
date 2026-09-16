@@ -65,6 +65,33 @@ authenticate() {
   dokku "$PLUGIN_COMMAND_PREFIX:backup-auth" ls "$RUSTFS_ACCESS_KEY" "$RUSTFS_SECRET_KEY" us-east-1 s3v4 "$(rustfs_endpoint)"
 }
 
+backed_up_object() {
+  aws_cli s3 ls "s3://$RUSTFS_BUCKET/" --recursive | awk '{ print $NF }' | head -n1
+}
+
+# Reads the backup back the way its owner would have to. The backup image
+# carries both aws and gpg, so one container can fetch the object and try to
+# open it, which is the only way to tell an encrypted backup from a backup that
+# was merely named as one.
+#
+# tar is given the compression rather than left to detect it: the archive
+# arrives down a pipe, where tar cannot seek back to look at the magic bytes.
+open_backup() {
+  local object="$1" passphrase="$2"
+  local decrypt="cat"
+  if [[ -n "$passphrase" ]]; then
+    decrypt="gpg --batch --quiet --decrypt --passphrase $passphrase"
+  fi
+
+  docker run --rm \
+    --env "AWS_ACCESS_KEY_ID=$RUSTFS_ACCESS_KEY" \
+    --env "AWS_SECRET_ACCESS_KEY=$RUSTFS_SECRET_KEY" \
+    --env "AWS_DEFAULT_REGION=us-east-1" \
+    --entrypoint sh \
+    dokku/s3backup:0.18.0 -c \
+    "aws --endpoint-url '$(rustfs_endpoint)' s3 cp 's3://$RUSTFS_BUCKET/$object' - | $decrypt | tar --list --gzip"
+}
+
 @test "($PLUGIN_COMMAND_PREFIX:backup) error when the service is not authenticated" {
   run dokku "$PLUGIN_COMMAND_PREFIX:backup" ls "$RUSTFS_BUCKET"
   echo "output: $output"
@@ -208,4 +235,72 @@ authenticate() {
   if [[ -f "/etc/cron.d/dokku-$PLUGIN_COMMAND_PREFIX-ls" ]]; then
     flunk "expected destroying the service to remove its cron file"
   fi
+}
+
+@test "($PLUGIN_COMMAND_PREFIX:backup-set-encryption) error when no passphrase is given" {
+  run dokku "$PLUGIN_COMMAND_PREFIX:backup-set-encryption" ls
+  echo "output: $output"
+  echo "status: $status"
+  assert_failure
+  assert_contains "${lines[*]}" "Please specify a GPG backup passphrase"
+}
+
+@test "($PLUGIN_COMMAND_PREFIX:backup-set-encryption) encrypts what is uploaded" {
+  authenticate
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:backup-set-encryption" ls hunter2
+  echo "output: $output"
+  echo "status: $status"
+  assert_success
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:backup" ls "$RUSTFS_BUCKET"
+  echo "output: $output"
+  echo "status: $status"
+  assert_success
+
+  local object
+  object="$(backed_up_object)"
+  echo "object: $object"
+  assert_contains "$object" ".tgz.gpg"
+
+  # the passphrase opens it, which is what proves the object is encrypted with
+  # the one that was set rather than merely named as though it were
+  run open_backup "$object" hunter2
+  echo "output: $output"
+  echo "status: $status"
+  assert_success
+  assert_contains "${lines[*]}" "backup"
+
+  # and without it the object is not a readable archive
+  run open_backup "$object" ""
+  echo "output: $output"
+  echo "status: $status"
+  assert_failure
+}
+
+@test "($PLUGIN_COMMAND_PREFIX:backup-unset-encryption) stops encrypting what is uploaded" {
+  authenticate
+  dokku "$PLUGIN_COMMAND_PREFIX:backup-set-encryption" ls hunter2
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:backup-unset-encryption" ls
+  echo "output: $output"
+  echo "status: $status"
+  assert_success
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:backup" ls "$RUSTFS_BUCKET"
+  echo "output: $output"
+  echo "status: $status"
+  assert_success
+
+  local object
+  object="$(backed_up_object)"
+  echo "object: $object"
+  assert_not_contains "$object" ".gpg"
+
+  # readable with no passphrase at all, which is the state the service started in
+  run open_backup "$object" ""
+  echo "output: $output"
+  echo "status: $status"
+  assert_success
+  assert_contains "${lines[*]}" "backup"
 }
