@@ -3,19 +3,3 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/config"
 set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
-is_implemented_command() {
-  declare desc="return true if value ($1) is in list (all other arguments)"
-  declare CMD="$1"
-  CMD="$(echo "$CMD" | cut -d ':' -f2)"
-
-  if [[ ${#PLUGIN_UNIMPLEMENTED_SUBCOMMANDS[@]} -eq 0 ]]; then
-    return 0
-  fi
-
-  local e
-  for e in "${PLUGIN_UNIMPLEMENTED_SUBCOMMANDS[@]}"; do
-    [[ "$e" == "$CMD" ]] && return 1
-  done
-  return 0
-}
-

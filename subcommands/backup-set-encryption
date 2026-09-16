@@ -10,7 +10,6 @@ service-backup-set-encryption-cmd() {
   local cmd="$PLUGIN_COMMAND_PREFIX:backup-set-encryption" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare SERVICE="$1" PASSPHRASE="$2"
-  is_implemented_command "$cmd" || dokku_log_fail "Not yet implemented"
 
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" backup-set-encryption "$PLUGIN_COMMAND_PREFIX" "$@"
 }

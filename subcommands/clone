@@ -10,7 +10,6 @@ service-clone-cmd() {
   local cmd="$PLUGIN_COMMAND_PREFIX:clone" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare SERVICE="$1" NEW_SERVICE="$2" CLONE_FLAGS_LIST=("${@:3}")
-  is_implemented_command "$cmd" || dokku_log_fail "Not yet implemented"
 
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" clone "$PLUGIN_COMMAND_PREFIX" "$@"
 }
