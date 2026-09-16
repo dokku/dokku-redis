@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/config"
-set -eo pipefail
-[[ $DOKKU_TRACE ]] && set -x
-
