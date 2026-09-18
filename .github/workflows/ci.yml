@@ -15,11 +15,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  unit-tests-master:
+  unit-tests:
     name: unit-tests
     runs-on: ubuntu-24.04
+    strategy:
+      # both versions are reported, because knowing a change works on one and
+      # not the other is the point of running it against two
+      fail-fast: false
+      matrix:
+        dokku_version:
+          # the version being developed against
+          - master
+          # the oldest dokku that runs on this runner: 0.35.0 is where ubuntu
+          # 24.04 became a supported distribution, and 0.34.9 before it tops
+          # out at 22.04
+          - "0.35.0"
     env:
-      DOKKU_VERSION: master
+      DOKKU_VERSION: ${{ matrix.dokku_version }}
 
     steps:
       - uses: actions/checkout@v7
@@ -34,7 +46,8 @@ jobs:
 
       - run: sudo sysctl -w vm.max_map_count=262144
 
-      - run: |
+      - if: matrix.dokku_version == 'master'
+        run: |
           git fetch -q origin master
           changed=$(git --no-pager diff --name-only $GITHUB_SHA..origin/master)
           if [ $changed = "Dockerfile" ]; then
@@ -54,5 +67,5 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: tmp/test-results
+          name: test-results-${{ matrix.dokku_version }}
           path: test-results
