@@ -274,6 +274,12 @@ Unset the post-create-network value:
 dokku redis:set lollipop post-create-network
 ```
 
+Set the keyserver a public key for backup encryption is fetched from:
+
+```shell
+dokku redis:set lollipop backup-keyserver hkp://keys.example.com
+```
+
 ### unlink the Redis service from the app
 
 ```shell
@@ -727,7 +733,11 @@ Set the `GPG` Public Key for encrypting backups:
 dokku redis:backup-set-public-key-encryption lollipop
 ```
 
-This method currently requires the <public-key-id> to be present on the keyserver `keyserver.ubuntu.com`:
+The <public-key-id> is fetched from a keyserver, `keyserver.ubuntu.com` unless the service names another set the keyserver the public key is fetched from:
+
+```shell
+dokku redis:set lollipop backup-keyserver hkp://keys.example.com
+```
 
 ### unschedule the backup of the Redis service
 

@@ -8,6 +8,8 @@ RUSTFS_CONTAINER="dokku-test-rustfs"
 RUSTFS_ACCESS_KEY="testaccesskey"
 RUSTFS_SECRET_KEY="testsecretkey"
 RUSTFS_BUCKET="dokku-test-backups"
+KEYSERVER_CONTAINER="dokku-test-keyserver"
+KEY_DIR=""
 
 rustfs_endpoint() {
   local ip
@@ -50,6 +52,83 @@ stop_rustfs() {
   docker container rm -f "$RUSTFS_CONTAINER" >/dev/null 2>&1 || true
 }
 
+# The backup image imports the public key from a keyserver before it encrypts
+# anything, so a test that does not want to publish a throwaway key to a public
+# keyserver has to bring one of its own. A keypair and a few lines of python are
+# enough: gpg asks for /pks/lookup and wants an armored key back.
+#
+# Everything runs in the image the plugin already pulls, which carries both gpg
+# and python, so this adds no dependency of its own.
+start_keyserver() {
+  KEY_DIR="$(mktemp -d)"
+  chmod 755 "$KEY_DIR"
+
+  docker container run --rm -v "$KEY_DIR:/keys" --entrypoint sh "$PLUGIN_S3BACKUP_IMAGE" -c '
+    export GNUPGHOME=/tmp/gnupg
+    mkdir -p "$GNUPGHOME" && chmod 700 "$GNUPGHOME"
+    gpg --batch --quiet --passphrase "" --quick-generate-key "dokku test <test@example.com>" default default never
+    fingerprint=$(gpg --list-keys --with-colons | awk -F: "/^fpr:/ {print \$10; exit}")
+    echo "$fingerprint" >/keys/fingerprint
+    gpg --armor --export "$fingerprint" >/keys/public.asc
+    gpg --armor --export-secret-keys "$fingerprint" >/keys/secret.asc
+  ' >/dev/null 2>&1
+
+  cat >"$KEY_DIR/serve.py" <<'PYTHON'
+import http.server
+
+with open('/keys/public.asc', 'rb') as handle:
+    key = handle.read()
+
+
+class Handler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/pgp-keys')
+        self.send_header('Content-Length', str(len(key)))
+        self.end_headers()
+        self.wfile.write(key)
+
+    def log_message(self, *args):
+        pass
+
+
+http.server.HTTPServer(('0.0.0.0', 11371), Handler).serve_forever()
+PYTHON
+
+  docker container rm -f "$KEYSERVER_CONTAINER" >/dev/null 2>&1 || true
+  docker container run -d --name "$KEYSERVER_CONTAINER" -v "$KEY_DIR:/keys" \
+    --entrypoint python3 "$PLUGIN_S3BACKUP_IMAGE" /keys/serve.py >/dev/null
+
+  local waited=0
+  until docker container exec "$KEYSERVER_CONTAINER" python3 -c 'import socket; socket.create_connection(("127.0.0.1", 11371), 1)' >/dev/null 2>&1; do
+    waited=$((waited + 1))
+    if [[ "$waited" -ge 30 ]]; then
+      echo "the keyserver did not come up" >&2
+      docker container logs "$KEYSERVER_CONTAINER" >&2
+      return 1
+    fi
+    sleep 1
+  done
+}
+
+stop_keyserver() {
+  docker container rm -f "$KEYSERVER_CONTAINER" >/dev/null 2>&1 || true
+  [[ -n "$KEY_DIR" ]] && rm -rf "$KEY_DIR"
+  KEY_DIR=""
+}
+
+# http rather than hkp: gpg resolves an hkp host through dirmngr's own resolver,
+# which refuses a bare address, and a container has no name to be reached by
+keyserver_endpoint() {
+  local ip
+  ip="$(docker container inspect "$KEYSERVER_CONTAINER" --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')"
+  echo "http://${ip}:11371"
+}
+
+key_fingerprint() {
+  cat "$KEY_DIR/fingerprint"
+}
+
 setup() {
   dokku "$PLUGIN_COMMAND_PREFIX:create" ls
   start_rustfs
@@ -59,6 +138,7 @@ teardown() {
   # one test destroys the service itself, so this has to tolerate its absence
   dokku "$PLUGIN_COMMAND_PREFIX:destroy" ls -f || true
   stop_rustfs
+  stop_keyserver
 }
 
 authenticate() {
@@ -90,6 +170,25 @@ open_backup() {
     --entrypoint sh \
     dokku/s3backup:0.18.0 -c \
     "aws --endpoint-url '$(rustfs_endpoint)' s3 cp 's3://$RUSTFS_BUCKET/$object' - | $decrypt | tar --list --gzip"
+}
+
+# The counterpart of open_backup for a key rather than a passphrase: the secret
+# half is imported into a throwaway container, which is the only thing that can
+# read what the public half encrypted.
+open_backup_with_key() {
+  local object="$1"
+
+  docker run --rm \
+    --env "AWS_ACCESS_KEY_ID=$RUSTFS_ACCESS_KEY" \
+    --env "AWS_SECRET_ACCESS_KEY=$RUSTFS_SECRET_KEY" \
+    --env "AWS_DEFAULT_REGION=us-east-1" \
+    --volume "$KEY_DIR:/keys" \
+    --entrypoint sh \
+    "$PLUGIN_S3BACKUP_IMAGE" -c \
+    "export GNUPGHOME=/tmp/gnupg
+     mkdir -p \"\$GNUPGHOME\" && chmod 700 \"\$GNUPGHOME\"
+     gpg --batch --quiet --import /keys/secret.asc
+     aws --endpoint-url '$(rustfs_endpoint)' s3 cp 's3://$RUSTFS_BUCKET/$object' - | gpg --batch --quiet --decrypt | tar --list --gzip"
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:backup) error when the service is not authenticated" {
@@ -303,4 +402,112 @@ open_backup() {
   echo "status: $status"
   assert_success
   assert_contains "${lines[*]}" "backup"
+}
+
+@test "($PLUGIN_COMMAND_PREFIX:backup-set-public-key-encryption) error when no key is given" {
+  run dokku "$PLUGIN_COMMAND_PREFIX:backup-set-public-key-encryption" ls
+  echo "output: $output"
+  echo "status: $status"
+  assert_failure
+  assert_contains "${lines[*]}" "Please specify a valid GPG Public Key ID (or fingerprint)"
+}
+
+@test "($PLUGIN_COMMAND_PREFIX:set) manages the backup keyserver" {
+  run dokku "$PLUGIN_COMMAND_PREFIX:set" ls backup-keyserver hkp://keys.example.com
+  echo "output: $output"
+  echo "status: $status"
+  assert_success
+
+  # unsetting is the same command with no value, which is how every other
+  # property is cleared
+  run dokku "$PLUGIN_COMMAND_PREFIX:set" ls backup-keyserver
+  echo "output: $output"
+  echo "status: $status"
+  assert_success
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:set" ls not-a-property value
+  echo "output: $output"
+  echo "status: $status"
+  assert_failure
+  assert_contains "${lines[*]}" "backup-keyserver"
+}
+
+@test "($PLUGIN_COMMAND_PREFIX:backup-set-public-key-encryption) encrypts to the key it fetches" {
+  authenticate
+  start_keyserver
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:backup-set-public-key-encryption" ls "$(key_fingerprint)"
+  echo "output: $output"
+  echo "status: $status"
+  assert_success
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:set" ls backup-keyserver "$(keyserver_endpoint)"
+  echo "output: $output"
+  echo "status: $status"
+  assert_success
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:backup" ls "$RUSTFS_BUCKET"
+  echo "output: $output"
+  echo "status: $status"
+  assert_success
+
+  local object
+  object="$(backed_up_object)"
+  echo "object: $object"
+  assert_contains "$object" ".tgz.gpg"
+
+  # only the holder of the secret half can read it, which is what makes this
+  # encryption rather than a suffix
+  run open_backup_with_key "$object"
+  echo "output: $output"
+  echo "status: $status"
+  assert_success
+  assert_contains "${lines[*]}" "backup"
+
+  run open_backup "$object" ""
+  echo "output: $output"
+  echo "status: $status"
+  assert_failure
+}
+
+@test "($PLUGIN_COMMAND_PREFIX:backup-unset-public-key-encryption) stops encrypting what is uploaded" {
+  authenticate
+  start_keyserver
+
+  dokku "$PLUGIN_COMMAND_PREFIX:backup-set-public-key-encryption" ls "$(key_fingerprint)"
+  dokku "$PLUGIN_COMMAND_PREFIX:set" ls backup-keyserver "$(keyserver_endpoint)"
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:backup-unset-public-key-encryption" ls
+  echo "output: $output"
+  echo "status: $status"
+  assert_success
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:backup" ls "$RUSTFS_BUCKET"
+  echo "output: $output"
+  echo "status: $status"
+  assert_success
+
+  local object
+  object="$(backed_up_object)"
+  echo "object: $object"
+  assert_not_contains "$object" ".gpg"
+}
+
+@test "($PLUGIN_COMMAND_PREFIX:backup) fails rather than uploading when the key cannot be fetched" {
+  authenticate
+
+  dokku "$PLUGIN_COMMAND_PREFIX:backup-set-public-key-encryption" ls DEADBEEFDEADBEEF
+  dokku "$PLUGIN_COMMAND_PREFIX:set" ls backup-keyserver http://127.0.0.1:11371
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:backup" ls "$RUSTFS_BUCKET"
+  echo "output: $output"
+  echo "status: $status"
+  assert_failure
+
+  # nothing reaches the bucket, so a backup is never silently readable by
+  # anyone who can get at it
+  run aws_cli s3 ls "s3://$RUSTFS_BUCKET/" --recursive
+  echo "output: $output"
+  assert_success
+  assert_output ""
 }
