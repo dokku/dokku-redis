@@ -113,9 +113,16 @@ report: tmp/xunit-reader
 .PHONY: clean
 clean:
 	rm -f README.md
+	rm -rf datastore
 
 .PHONY: generate
-generate: clean README.md
+generate: clean datastore README.md
+
+# the definitions this plugin ships, written from the binary that runs them. They
+# are generated output like the readme, so CI fails if what is committed differs.
+.PHONY: datastore
+datastore: $(DOKKU_DATASTORE)
+	$(DOKKU_DATASTORE) generate --plugin-dir . $(PLUGIN_COMMAND_PREFIX)
 
 .PHONY: README.md
 README.md: $(DOKKU_DATASTORE)

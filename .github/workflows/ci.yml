@@ -48,18 +48,12 @@ jobs:
 
       - if: matrix.dokku_version == 'master'
         run: |
-          git fetch -q origin master
-          changed=$(git --no-pager diff --name-only $GITHUB_SHA..origin/master)
-          if [ $changed = "Dockerfile" ]; then
-            echo "Please run 'make generate' to update the image version in the README.md"
-          else
-            make generate
-            if ! git diff --quiet README.md; then
-              echo "Please run 'make generate'"
-              git status --short
-              git --no-pager diff README.md
-              exit 1
-            fi
+          make generate
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Please run 'make generate'"
+            git status --short
+            git --no-pager diff
+            exit 1
           fi
 
       - run: make test

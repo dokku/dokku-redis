@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# dokku-redis-export writes a dump of the running server to stdout.
+#
+# Everything diagnostic goes to stderr. Stdout carries a binary RDB file, and a
+# single stray line of output there would corrupt the dump without failing.
+#
+# The password arrives in REDISCLI_AUTH rather than on the command line, so it
+# never reaches the container's process table.
+set -eo pipefail
+
+DUMP_FILE="${DUMP_FILE:-/data/dump.rdb}"
+TIMEOUT_SECONDS="${EXPORT_TIMEOUT_SECONDS:-120}"
+
+# persistence_field reads one field out of the redis persistence info section,
+# which is CRLF delimited and carries comment lines starting with a hash.
+persistence_field() {
+  declare field="$1"
+  redis-cli --no-auth-warning INFO persistence | tr -d '\r' | awk -F: -v field="$field" '$1 == field { print $2 }'
+}
+
+main() {
+  declare reply waited
+
+  # redis-cli exits zero even when the server rejects the command, so the reply
+  # has to be inspected rather than just the exit status
+  reply="$(redis-cli --no-auth-warning BGSAVE)"
+  if [[ "$reply" != *"Background saving"* ]]; then
+    echo "unable to start a background save: $reply" >&2
+    exit 1
+  fi
+
+  # BGSAVE returns as soon as the child is forked, so wait on the completion
+  # flag rather than on LASTSAVE. LASTSAVE only has second resolution and is
+  # seeded with the server start time, so a save that finishes in the same
+  # second the container started is indistinguishable from no save at all.
+  waited=0
+  while [[ "$(persistence_field rdb_bgsave_in_progress)" == "1" ]]; do
+    if [[ "$waited" -ge "$TIMEOUT_SECONDS" ]]; then
+      echo "background save did not complete within ${TIMEOUT_SECONDS} seconds" >&2
+      exit 1
+    fi
+
+    sleep 1
+    waited=$((waited + 1))
+  done
+
+  if [[ "$(persistence_field rdb_last_bgsave_status)" != "ok" ]]; then
+    echo "background save failed, check the service logs" >&2
+    exit 1
+  fi
+
+  cat "$DUMP_FILE"
+}
+
+main "$@"

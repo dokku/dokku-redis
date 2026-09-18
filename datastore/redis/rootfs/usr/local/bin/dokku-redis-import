@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# dokku-redis-import replaces the dump the server reads at boot with what
+# arrives on stdin.
+#
+# It runs with the server down, because redis reads its dump at boot and writes
+# it again on shutdown, so replacing the file underneath a running server would
+# be undone twice over.
+set -eo pipefail
+
+DUMP_FILE="${DUMP_FILE:-/data/dump.rdb}"
+DUMP_OWNER="${DUMP_OWNER:-redis}"
+
+main() {
+  # the dump belongs to the datastore user inside the container, so it is
+  # written and owned from here rather than from the host, where dokku has no
+  # way to name that user
+  rm -f "$DUMP_FILE"
+  cat >"$DUMP_FILE"
+  chown "$DUMP_OWNER:" "$DUMP_FILE"
+}
+
+main "$@"
