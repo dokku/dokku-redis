@@ -38,19 +38,19 @@ redis:export <service>                             # export a dump of the Redis 
 redis:expose <service> <ports...>                  # expose a Redis service on custom host:port if provided (random port on the 0.0.0.0 interface if otherwise unspecified)
 redis:import <service>                             # import a dump into the Redis service database
 redis:info <service> [--info-flags...]             # print the service information
-redis:link <service> <app> [--link-flags...]       # link the Redis service to the app
+redis:link <service> [<app>] [--link-flags...]     # link the Redis service to the app
 redis:linked <service> [<app>]                     # check if the Redis service is linked to an app
 redis:links <service>                              # list all apps linked to the Redis service
 redis:list                                         # list all Redis services
 redis:logs <service> [--tail] [--num <num>]        # print the most recent log(s) for this service
 redis:pause <service>                              # pause a running Redis service
-redis:promote <service> <app>                      # promote service <service> as REDIS_URL in <app>
+redis:promote <service> [<app>]                    # promote service <service> as REDIS_URL in <app>
 redis:restart <service>                            # graceful shutdown and restart of the Redis service container
 redis:set <service> <key> <value>                  # set or clear a property for a service
 redis:start <service>                              # start a previously stopped Redis service
 redis:stop <service>                               # stop a running Redis service
 redis:unexpose <service>                           # unexpose a previously exposed Redis service
-redis:unlink <service> <app> [-n|--no-restart]     # unlink the Redis service from the app
+redis:unlink <service> [<app>] [-n|--no-restart]   # unlink the Redis service from the app
 redis:upgrade <service> [--upgrade-flags...]       # upgrade service <service> to the specified versions
 ```
 
@@ -153,7 +153,7 @@ dokku redis:info lollipop --version
 
 ```shell
 # usage
-dokku redis:link <service> <app> [--link-flags...]
+dokku redis:link <service> [<app>] [--link-flags...]
 ```
 
 flags:
@@ -284,7 +284,7 @@ dokku redis:set lollipop backup-keyserver hkp://keys.example.com
 
 ```shell
 # usage
-dokku redis:unlink <service> <app> [-n|--no-restart]
+dokku redis:unlink <service> [<app>] [-n|--no-restart]
 ```
 
 flags:
@@ -375,7 +375,7 @@ dokku redis:pause lollipop
 
 ```shell
 # usage
-dokku redis:promote <service> <app>
+dokku redis:promote <service> [<app>]
 ```
 
 If you have a redis service linked to an app and try to link another redis service another link environment variable will be generated automatically:
