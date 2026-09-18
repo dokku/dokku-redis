@@ -4,13 +4,13 @@ Official redis plugin for dokku. Currently defaults to installing [redis 8.8.0](
 
 ## Requirements
 
-- dokku 0.19.x+
+- dokku 0.35.x+
 - docker 1.8.x
 
 ## Installation
 
 ```shell
-# on 0.19.x+
+# on 0.35.x+
 sudo dokku plugin:install https://github.com/dokku/dokku-redis.git --name redis
 ```
 
