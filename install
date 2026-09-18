@@ -4,6 +4,21 @@ source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
 set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
+# installed-datastore-version reports the version a binary says it is, and nothing
+# at all when there is no such file or it cannot be run.
+installed-datastore-version() {
+  declare BINARY="$1"
+
+  if [[ ! -x "$BINARY" ]]; then
+    return 0
+  fi
+
+  # a file that is executable but is not this binary exits non-zero, and under
+  # errexit the assignment that takes this would end the install saying nothing.
+  # Reporting no version is the useful answer: it is what a caller checks for.
+  "$BINARY" version 2>/dev/null | head -n1 | tr -d '[:space:]' || true
+}
+
 plugin-install() {
   local ARCHITECTURE="amd64"
   if [[ "$(uname -m)" == "aarch64" ]]; then
@@ -31,7 +46,11 @@ plugin-install() {
     return
   fi
 
-  if [[ ! -f "$DOKKU_DATASTORE_BINARY" ]]; then
+  # the binary is asked what it is rather than believed on the strength of its
+  # filename. A truncated download, a binary for the wrong architecture, one left
+  # by hand, or a release that was re-tagged all look correct to a name check and
+  # would then be used for as long as the version stayed pinned
+  if [[ "$(installed-datastore-version "$DOKKU_DATASTORE_BINARY")" != "$DOKKU_DATASTORE_VERSION" ]]; then
     dokku_log_info1_quiet "Installing dokku-datastore@${DOKKU_DATASTORE_VERSION}"
 
     # download to a temporary path so that a failed request cannot leave a file
@@ -39,6 +58,17 @@ plugin-install() {
     if ! curl -sSL --fail "${DOKKU_DATASTORE_URL}" -o "${DOKKU_DATASTORE_BINARY}.download"; then
       rm -f "${DOKKU_DATASTORE_BINARY}.download"
       dokku_log_fail "Unable to download dokku-datastore@${DOKKU_DATASTORE_VERSION} from ${DOKKU_DATASTORE_URL}"
+    fi
+
+    # made executable before it is asked its version, because curl writes it
+    # without the bit and a file that cannot run reports nothing
+    chmod +x "${DOKKU_DATASTORE_BINARY}.download"
+
+    local DOWNLOADED_VERSION
+    DOWNLOADED_VERSION="$(installed-datastore-version "${DOKKU_DATASTORE_BINARY}.download")"
+    if [[ "$DOWNLOADED_VERSION" != "$DOKKU_DATASTORE_VERSION" ]]; then
+      rm -f "${DOKKU_DATASTORE_BINARY}.download"
+      dokku_log_fail "Downloaded dokku-datastore reports '${DOWNLOADED_VERSION}' rather than ${DOKKU_DATASTORE_VERSION}"
     fi
 
     mv "${DOKKU_DATASTORE_BINARY}.download" "$DOKKU_DATASTORE_BINARY"
