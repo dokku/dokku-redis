@@ -2,7 +2,6 @@
 source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/config"
 set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
-source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
 
 service-set-cmd() {
   declare desc="set or clear a property for a service"
