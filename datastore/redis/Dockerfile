@@ -1,2 +1,1 @@
-ARG IMAGE=redis:8.8.0
-FROM ${IMAGE}
+FROM redis:8.8.0

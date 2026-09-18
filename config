@@ -31,8 +31,8 @@ if [[ -d "${_DIR}/datastore" ]]; then
 fi
 
 if [[ -n "$_DEFINITION" ]]; then
-  export REDIS_IMAGE=${REDIS_IMAGE:="$(awk -F'[=:]' '/^ARG IMAGE=/ {print $2}' "${_DEFINITION}/Dockerfile")"}
-  export REDIS_IMAGE_VERSION=${REDIS_IMAGE_VERSION:="$(awk -F'[=:]' '/^ARG IMAGE=/ {print $3}' "${_DEFINITION}/Dockerfile")"}
+  export REDIS_IMAGE=${REDIS_IMAGE:="$(awk -F'[ :]' '/^FROM / {print $2}' "${_DEFINITION}/Dockerfile")"}
+  export REDIS_IMAGE_VERSION=${REDIS_IMAGE_VERSION:="$(awk -F'[ :]' '/^FROM / {print $3}' "${_DEFINITION}/Dockerfile")"}
 fi
 export PLUGIN_IMAGE=$REDIS_IMAGE
 export PLUGIN_IMAGE_VERSION=$REDIS_IMAGE_VERSION
@@ -45,7 +45,7 @@ if [[ -n $DOKKU_API_VERSION ]]; then
   export PLUGIN_BASE_PATH="$PLUGIN_ENABLED_PATH"
 fi
 
-export DOKKU_DATASTORE_VERSION="${DOKKU_DATASTORE_VERSION:-0.1.39}"
+export DOKKU_DATASTORE_VERSION="${DOKKU_DATASTORE_VERSION:-0.1.40}"
 export PLUGIN_BUSYBOX_IMAGE=${PLUGIN_BUSYBOX_IMAGE:=busybox:1.37.0-uclibc}
 export PLUGIN_AMBASSADOR_IMAGE=${PLUGIN_AMBASSADOR_IMAGE:=dokku/ambassador:0.8.2}
 export PLUGIN_S3BACKUP_IMAGE=${PLUGIN_S3BACKUP_IMAGE:=dokku/s3backup:0.18.0}
