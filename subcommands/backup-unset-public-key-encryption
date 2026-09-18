@@ -7,7 +7,6 @@ service-backup-unset-public-key-encryption-cmd() {
   declare desc="unset GPG Public Key encryption for future backups of the $PLUGIN_SERVICE service"
   local cmd="$PLUGIN_COMMAND_PREFIX:backup-unset-public-key-encryption" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare SERVICE="$1"
 
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" backup-unset-public-key-encryption "$PLUGIN_COMMAND_PREFIX" "$@"
 }

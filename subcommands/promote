@@ -7,7 +7,6 @@ service-promote-cmd() {
   declare desc="promote service <service> as ${PLUGIN_DEFAULT_ALIAS}_URL in <app>"
   local cmd="$PLUGIN_COMMAND_PREFIX:promote" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare SERVICE="$1" APP="$2"
 
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" promote "$PLUGIN_COMMAND_PREFIX" "$@"
 }

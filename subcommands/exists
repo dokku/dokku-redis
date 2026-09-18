@@ -7,7 +7,6 @@ service-exists-cmd() {
   declare desc="check if the $PLUGIN_SERVICE service exists"
   local cmd="$PLUGIN_COMMAND_PREFIX:exists" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare SERVICE="$1"
 
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" exists "$PLUGIN_COMMAND_PREFIX" "$@"
 }

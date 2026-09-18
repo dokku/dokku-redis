@@ -7,7 +7,6 @@ service-stop-cmd() {
   declare desc="stop a running $PLUGIN_SERVICE service"
   local cmd="$PLUGIN_COMMAND_PREFIX:stop" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare SERVICE="$1"
 
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" stop "$PLUGIN_COMMAND_PREFIX" "$@"
 }

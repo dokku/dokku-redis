@@ -7,7 +7,6 @@ service-import-cmd() {
   declare desc="import a dump into the $PLUGIN_SERVICE service database"
   local cmd="$PLUGIN_COMMAND_PREFIX:import" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare SERVICE="$1"
 
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" import "$PLUGIN_COMMAND_PREFIX" "$@"
 }

@@ -7,7 +7,6 @@ service-upgrade-cmd() {
   declare desc="upgrade service <service> to the specified versions"
   local cmd="$PLUGIN_COMMAND_PREFIX:upgrade" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare SERVICE="$1" UPGRADE_FLAGS_LIST=("${@:2}")
 
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" upgrade "$PLUGIN_COMMAND_PREFIX" "$@"
 }

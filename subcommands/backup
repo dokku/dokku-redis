@@ -7,7 +7,6 @@ service-backup-cmd() {
   declare desc="create a backup of the $PLUGIN_SERVICE service to an existing s3 bucket"
   local cmd="$PLUGIN_COMMAND_PREFIX:backup" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare SERVICE="$1" BUCKET_NAME="$2" USE_IAM_OPTIONAL_FLAG="$3"
 
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" backup "$PLUGIN_COMMAND_PREFIX" "$@"
 }

@@ -7,7 +7,6 @@ service-connect-cmd() {
   declare desc="connect to the service via the $PLUGIN_COMMAND_PREFIX connection tool"
   local cmd="$PLUGIN_COMMAND_PREFIX:connect" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare SERVICE="$1"
 
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" connect "$PLUGIN_COMMAND_PREFIX" "$@"
 }

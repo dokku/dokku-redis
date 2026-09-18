@@ -7,7 +7,6 @@ service-logs-cmd() {
   declare desc="print the most recent log(s) for this service"
   local cmd="$PLUGIN_COMMAND_PREFIX:logs" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare SERVICE="$1" TAIL_FLAG="$2" TAIL_NUM_OPTIONAL="${3:-all}"
 
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" logs "$PLUGIN_COMMAND_PREFIX" "$@"
 }

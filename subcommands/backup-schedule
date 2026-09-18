@@ -7,7 +7,6 @@ service-backup-schedule-cmd() {
   declare desc="schedule a backup of the $PLUGIN_SERVICE service"
   local cmd="$PLUGIN_COMMAND_PREFIX:backup-schedule" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare SERVICE="$1" SCHEDULE="$2" BUCKET_NAME="$3" USE_IAM_OPTIONAL_FLAG="$4"
 
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" backup-schedule "$PLUGIN_COMMAND_PREFIX" "$@"
 }

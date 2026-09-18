@@ -7,7 +7,6 @@ service-start-cmd() {
   declare desc="start a previously stopped $PLUGIN_SERVICE service"
   local cmd="$PLUGIN_COMMAND_PREFIX:start" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare SERVICE="$1"
 
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" start "$PLUGIN_COMMAND_PREFIX" "$@"
 }

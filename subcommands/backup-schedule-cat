@@ -7,7 +7,6 @@ service-backup-schedule-cat-cmd() {
   declare desc="cat the contents of the configured backup cronfile for the service"
   local cmd="$PLUGIN_COMMAND_PREFIX:backup-schedule-cat" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare SERVICE="$1"
 
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" backup-schedule-cat "$PLUGIN_COMMAND_PREFIX" "$@"
 }

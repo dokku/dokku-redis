@@ -7,7 +7,6 @@ service-linked-cmd() {
   declare desc="check if the $PLUGIN_SERVICE service is linked to an app"
   local cmd="$PLUGIN_COMMAND_PREFIX:linked" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare SERVICE="$1" APP="$2"
 
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" linked "$PLUGIN_COMMAND_PREFIX" "$@"
 }

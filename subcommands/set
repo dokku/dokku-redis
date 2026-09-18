@@ -7,7 +7,6 @@ service-set-cmd() {
   declare desc="set or clear a property for a service"
   local cmd="$PLUGIN_COMMAND_PREFIX:set" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare SERVICE="$1" KEY="$2" VALUE="$3"
 
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" set "$PLUGIN_COMMAND_PREFIX" "$@"
 }

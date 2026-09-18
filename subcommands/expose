@@ -7,7 +7,6 @@ service-expose-cmd() {
   declare desc="expose a $PLUGIN_SERVICE service on custom host:port if provided (random port on the 0.0.0.0 interface if otherwise unspecified)"
   local cmd="$PLUGIN_COMMAND_PREFIX:expose" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare SERVICE="$1" PORTS_LIST=("${@:2}")
 
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" expose "$PLUGIN_COMMAND_PREFIX" "$@"
 }

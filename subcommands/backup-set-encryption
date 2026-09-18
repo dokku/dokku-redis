@@ -7,7 +7,6 @@ service-backup-set-encryption-cmd() {
   declare desc="set encryption for all future backups of $PLUGIN_SERVICE service"
   local cmd="$PLUGIN_COMMAND_PREFIX:backup-set-encryption" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare SERVICE="$1" PASSPHRASE="$2"
 
   "${DOKKU_LIB_ROOT}/data/${PLUGIN_COMMAND_PREFIX}/dokku-datastore" backup-set-encryption "$PLUGIN_COMMAND_PREFIX" "$@"
 }
