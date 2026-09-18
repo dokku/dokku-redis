@@ -733,7 +733,7 @@ Set the `GPG` Public Key for encrypting backups:
 dokku redis:backup-set-public-key-encryption lollipop
 ```
 
-The <public-key-id> is fetched from a keyserver, `keyserver.ubuntu.com` unless the service names another set the keyserver the public key is fetched from:
+The <public-key-id> is fetched from `keyserver.ubuntu.com`, unless the service names another one with the backup-keyserver property:
 
 ```shell
 dokku redis:set lollipop backup-keyserver hkp://keys.example.com
