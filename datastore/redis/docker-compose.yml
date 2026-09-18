@@ -1,0 +1,83 @@
+---
+services:
+  redis:
+    image: "{{ .Image }}:{{ .ImageVersion }}"
+
+    command:
+      - redis-server
+      - /usr/local/etc/redis/redis.conf
+      - --bind
+      - 0.0.0.0
+
+    volumes:
+      - type: bind
+        source: "{{ .HostRoot }}/config"
+        target: /usr/local/etc/redis
+      - type: bind
+        source: "{{ .HostRoot }}/data"
+        target: /data
+
+    configs:
+      - source: redis_conf
+        target: /usr/local/etc/redis/redis.conf
+
+    ports:
+      - name: native
+        target: 6379
+        primary: true
+
+configs:
+  # seeded once into the config directory and never rewritten, so an operator
+  # editing redis.conf keeps the edit. The Go implementation instead rewrites
+  # the requirepass line on every create, which means a file supplied through
+  # REDIS_CONFIG_PATH becomes the operator's responsibility for auth here.
+  redis_conf:
+    content: |
+      requirepass {{ .Secret.password }}
+
+x-dokku:
+  plugin: redis
+  title: Redis
+  scheme: redis
+  alias: REDIS
+  dsn: "{{ .Scheme }}://:{{ .Secret.password }}@{{ .Host }}:{{ .Port.native }}"
+
+  # the redis image ships no probe whose exit status can be trusted without the
+  # password, so readiness stays on the dokku/wait sidecar that every datastore
+  # uses today rather than on a compose healthcheck
+  wait: native
+
+  secrets:
+    password:
+      file: PASSWORD
+      length: 64
+      env: SERVICE_PASSWORD
+
+  commands:
+    connect:
+      exec: ["redis-cli", "--no-auth-warning"]
+      env:
+        REDISCLI_AUTH: "{{ .Secret.password }}"
+        LANG: C.UTF-8
+        LC_ALL: C.UTF-8
+
+    # both dump verbs are vendored scripts, mounted into the container from the
+    # service directory rather than baked into an image. Mounting keeps this
+    # definition on the pull path, and the dump still streams rather than being
+    # buffered through the tool as a string.
+    export:
+      # runs beside the service rather than inside it, sharing its network
+      # namespace. The script is mounted into the sidecar, so a service whose
+      # container was created before the script existed, or by the bash plugin,
+      # can still be exported without being recreated first.
+      mode: sidecar
+      exec: ["dokku-redis-export"]
+      env:
+        REDISCLI_AUTH: "{{ .Secret.password }}"
+
+    import:
+      # redis reads its dump at boot and writes it again on shutdown, so the
+      # server has to be down while /data/dump.rdb is replaced
+      mode: offline
+      stdin: true
+      exec: ["dokku-redis-import"]
