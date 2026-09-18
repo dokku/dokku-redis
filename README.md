@@ -17,7 +17,7 @@ sudo dokku plugin:install https://github.com/dokku/dokku-redis.git --name redis
 ## Commands
 
 ```
-redis:app-links <app>                              # list all Redis service links for a given app
+redis:app-links [<app>]                            # list all Redis service links for a given app
 redis:backup <service> <bucket-name> [-u|--use-iam] # create a backup of the Redis service to an existing s3 bucket
 redis:backup-auth <service> <aws-access-key-id> <aws-secret-access-key> <aws-default-region> <aws-signature-version> <endpoint-url> # set up authentication for backups on the Redis service
 redis:backup-deauth <service>                      # remove backup authentication for the Redis service
@@ -39,7 +39,7 @@ redis:expose <service> <ports...>                  # expose a Redis service on c
 redis:import <service>                             # import a dump into the Redis service database
 redis:info <service> [--info-flags...]             # print the service information
 redis:link <service> <app> [--link-flags...]       # link the Redis service to the app
-redis:linked <service> <app>                       # check if the Redis service is linked to an app
+redis:linked <service> [<app>]                     # check if the Redis service is linked to an app
 redis:links <service>                              # list all apps linked to the Redis service
 redis:list                                         # list all Redis services
 redis:logs <service> [--tail] [--num <num>]        # print the most recent log(s) for this service
@@ -479,7 +479,7 @@ Service scripting can be executed using the following commands:
 
 ```shell
 # usage
-dokku redis:app-links <app>
+dokku redis:app-links [<app>]
 ```
 
 List all redis services that are linked to the `playground` app.
@@ -530,7 +530,7 @@ dokku redis:exists lollipop
 
 ```shell
 # usage
-dokku redis:linked <service> <app>
+dokku redis:linked <service> [<app>]
 ```
 
 Here we check if the lollipop redis service is linked to the `playground` app.
