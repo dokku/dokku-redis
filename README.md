@@ -1,6 +1,6 @@
 # dokku redis [![Build Status](https://img.shields.io/github/actions/workflow/status/dokku/dokku-redis/ci.yml?branch=master&style=flat-square "Build Status")](https://github.com/dokku/dokku-redis/actions/workflows/ci.yml?query=branch%3Amaster) [![IRC Network](https://img.shields.io/badge/irc-libera-blue.svg?style=flat-square "IRC Libera")](https://webchat.libera.chat/?channels=dokku)
 
-Official redis plugin for dokku. Currently defaults to installing [redis 8.8.0](https://hub.docker.com/_/redis/).
+Official redis plugin for dokku. Currently defaults to installing [redis 8.10.0](https://hub.docker.com/_/redis/).
 
 ## Requirements
 
@@ -91,7 +91,7 @@ You can also specify the image and image version to use for the service. It *mus
 
 ```shell
 export REDIS_IMAGE="redis"
-export REDIS_IMAGE_VERSION="8.8.0"
+export REDIS_IMAGE_VERSION="8.10.0"
 dokku redis:create lollipop
 ```
 
