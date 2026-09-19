@@ -124,6 +124,13 @@ generate: clean datastore README.md
 datastore: $(DOKKU_DATASTORE)
 	$(DOKKU_DATASTORE) generate --plugin-dir . $(PLUGIN_COMMAND_PREFIX)
 
+# the version pinned in config, for anything that needs to read it back. Reading
+# it here rather than repeating the expression keeps one definition of where the
+# pin lives.
+.PHONY: datastore-version
+datastore-version:
+	@echo $(DOKKU_DATASTORE_VERSION)
+
 .PHONY: README.md
 README.md: $(DOKKU_DATASTORE)
 	$(DOKKU_DATASTORE) readme $(PLUGIN_COMMAND_PREFIX) > README.md
