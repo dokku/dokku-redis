@@ -3,12 +3,41 @@ load test_helper
 
 setup() {
   dokku "$PLUGIN_COMMAND_PREFIX:create" l
-  curl -o "/tmp/fake.rdb" https://raw.githubusercontent.com/sripathikrishnan/redis-rdb-tools/master/tests/dumps/dictionary.rdb
 }
 
 teardown() {
   dokku "$PLUGIN_COMMAND_PREFIX:destroy" l -f
-  rm -f "/tmp/fake.rdb"
+  if [[ -d "$PLUGIN_DATA_ROOT/new_service" ]]; then
+    dokku "$PLUGIN_COMMAND_PREFIX:destroy" new_service -f
+  fi
+  rm -f "$BATS_TMPDIR/export.rdb"
+}
+
+# Reads and writes the record the round trip follows, so that an import is
+# judged by the data it moved rather than by the status it exited with.
+probe() {
+  local action="$1" service="$2" value="${3:-}"
+  local password
+  password="$(sudo cat "$PLUGIN_DATA_ROOT/$service/PASSWORD")"
+
+  local -a cli=(
+    docker container exec --env "REDISCLI_AUTH=$password"
+    "dokku.$PLUGIN_COMMAND_PREFIX.$service"
+    redis-cli --no-auth-warning
+  )
+
+  case "$action" in
+  write)
+    "${cli[@]}" SET probe "$value" >/dev/null
+    ;;
+  read)
+    "${cli[@]}" GET probe
+    ;;
+  *)
+    echo "unknown probe action $action" >&2
+    return 1
+    ;;
+  esac
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:import) error when there are no arguments" {
@@ -32,9 +61,22 @@ teardown() {
   assert_failure
 }
 
-@test "($PLUGIN_COMMAND_PREFIX:import) success" {
-  run dokku "$PLUGIN_COMMAND_PREFIX:import" l <"/tmp/fake.rdb"
+@test "($PLUGIN_COMMAND_PREFIX:import) round trip" {
+  dokku "$PLUGIN_COMMAND_PREFIX:create" new_service
+
+  # the destination holds a record of its own, so reading the source's value
+  # back afterwards says the import replaced rather than merged
+  probe write l known
+  probe write new_service clobbered
+
+  dokku "$PLUGIN_COMMAND_PREFIX:export" l >"$BATS_TMPDIR/export.rdb"
+  [[ -s "$BATS_TMPDIR/export.rdb" ]]
+
+  run dokku "$PLUGIN_COMMAND_PREFIX:import" new_service <"$BATS_TMPDIR/export.rdb"
   echo "output: $output"
   echo "status: $status"
   assert_success
+
+  run probe read new_service
+  assert_output "known"
 }
