@@ -42,7 +42,7 @@ redis:link <service> [<app>] [--link-flags...]     # link the Redis service to t
 redis:linked <service> [<app>]                     # check if the Redis service is linked to an app
 redis:links <service>                              # list all apps linked to the Redis service
 redis:list                                         # list all Redis services
-redis:logs <service> [--tail] [--num <num>]        # print the most recent log(s) for this service
+redis:logs <service> [-t|--tail [<tail-num>]]      # print the most recent log(s) for this service
 redis:pause <service>                              # pause a running Redis service
 redis:promote <service> [<app>]                    # promote service <service> as REDIS_URL in <app>
 redis:restart <service>                            # graceful shutdown and restart of the Redis service container
@@ -69,17 +69,17 @@ dokku redis:create <service> [--create-flags...]
 
 flags:
 
-- `--config-options <string>`: extra arguments to pass to the container create command
-- `--custom-env <string>`: semi-colon delimited environment variables to start the service with
-- `--image <string>`: the image name to start the service with
-- `--image-version <string>`: the image version to start the service with
-- `--initial-network <string>`: the initial network to attach the service to
-- `--memory <int>`: container memory limit in megabytes (default: unlimited)
-- `--password <string>`: override the user-level service password
-- `--post-create-network <strings>`: a comma-separated list of networks to attach the service container to after service creation
-- `--post-start-network <strings>`: a comma-separated list of networks to attach the service container to after service start
-- `--root-password <string>`: override the root-level service password
-- `--shm-size <string>`: override shared memory size for the service docker container
+- `-c|--config-options <string>`: extra arguments to pass to the container create command
+- `-C|--custom-env <string>`: semi-colon delimited environment variables to start the service with
+- `-i|--image <string>`: the image name to start the service with
+- `-I|--image-version <string>`: the image version to start the service with
+- `-N|--initial-network <string>`: the initial network to attach the service to
+- `-m|--memory <int>`: container memory limit in megabytes (default: unlimited)
+- `-p|--password <string>`: override the user-level service password
+- `-P|--post-create-network <strings>`: a comma-separated list of networks to attach the service container to after service creation
+- `-S|--post-start-network <strings>`: a comma-separated list of networks to attach the service container to after service start
+- `-r|--root-password <string>`: override the root-level service password
+- `-s|--shm-size <string>`: override shared memory size for the service docker container
 
 Create a redis service named lollipop:
 
@@ -100,6 +100,23 @@ You can also specify custom environment variables to start the redis service in 
 ```shell
 export REDIS_CUSTOM_ENV="USER=alpha;HOST=beta"
 dokku redis:create lollipop
+```
+
+### delete the Redis service/data/container if there are no links left
+
+```shell
+# usage
+dokku redis:destroy <service> [-f|--force]
+```
+
+flags:
+
+- `-f|--force`: force the destruction of the service
+
+Destroy the service, it's data, and the running container:
+
+```shell
+dokku redis:destroy lollipop
 ```
 
 ### print the service information
@@ -147,6 +164,48 @@ dokku redis:info lollipop --post-start-network
 dokku redis:info lollipop --service-root
 dokku redis:info lollipop --status
 dokku redis:info lollipop --version
+```
+
+### list all Redis services
+
+```shell
+# usage
+dokku redis:list
+```
+
+List all services:
+
+```shell
+dokku redis:list
+```
+
+### print the most recent log(s) for this service
+
+```shell
+# usage
+dokku redis:logs <service> [-t|--tail [<tail-num>]]
+```
+
+flags:
+
+- `-t|--tail <int>`: tail the logs, optionally showing this many lines
+
+You can tail logs for a particular service:
+
+```shell
+dokku redis:logs lollipop
+```
+
+By default, logs will not be tailed, but you can do this with the --tail flag:
+
+```shell
+dokku redis:logs lollipop --tail
+```
+
+By default the last 100 lines are shown, but a different count can be specified:
+
+```shell
+dokku redis:logs lollipop --tail=5
 ```
 
 ### link the Redis service to the app
@@ -206,47 +265,23 @@ This will cause `REDIS_URL` to be set as:
 redis2://:SOME_PASSWORD@dokku-redis-lollipop:6379
 ```
 
-### list all Redis services
+### unlink the Redis service from the app
 
 ```shell
 # usage
-dokku redis:list
-```
-
-List all services:
-
-```shell
-dokku redis:list
-```
-
-### print the most recent log(s) for this service
-
-```shell
-# usage
-dokku redis:logs <service> [--tail] [--num <num>]
+dokku redis:unlink <service> [<app>] [-n|--no-restart]
 ```
 
 flags:
 
-- `--num <int>`: the number of lines to display
-- `--tail`: tail the logs
+- `-n|--no-restart`: whether to skip restarting the app
 
-You can tail logs for a particular service:
+You can unlink a redis service:
 
-```shell
-dokku redis:logs lollipop
-```
-
-By default, logs will not be tailed, but you can do this with the --tail flag:
+> NOTE: this will restart your app and unset related environment variables
 
 ```shell
-dokku redis:logs lollipop --tail
-```
-
-By default the last 100 lines are shown, but a different count can be specified:
-
-```shell
-dokku redis:logs lollipop --tail --num 5
+dokku redis:unlink lollipop playground
 ```
 
 ### set or clear a property for a service
@@ -278,25 +313,6 @@ Set the keyserver a public key for backup encryption is fetched from:
 
 ```shell
 dokku redis:set lollipop backup-keyserver hkp://keys.example.com
-```
-
-### unlink the Redis service from the app
-
-```shell
-# usage
-dokku redis:unlink <service> [<app>] [-n|--no-restart]
-```
-
-flags:
-
-- `-n|--no-restart`: whether to skip restarting the app
-
-You can unlink a redis service:
-
-> NOTE: this will restart your app and unset related environment variables
-
-```shell
-dokku redis:unlink lollipop playground
 ```
 
 ### Service Lifecycle
@@ -358,17 +374,17 @@ Expose the service on the service's normal ports, with the first on a specified 
 dokku redis:expose lollipop 127.0.0.1:6379
 ```
 
-### pause a running Redis service
+### unexpose a previously exposed Redis service
 
 ```shell
 # usage
-dokku redis:pause <service>
+dokku redis:unexpose <service>
 ```
 
-Pause the running container for the service:
+Unexpose the service, removing access to it from the public interface (`0.0.0.0`):
 
 ```shell
-dokku redis:pause lollipop
+dokku redis:unexpose lollipop
 ```
 
 ### promote service <service> as REDIS_URL in <app>
@@ -400,19 +416,6 @@ DOKKU_REDIS_BLUE_URL=redis://:ANOTHER_PASSWORD@dokku-redis-other-service:6379/ot
 DOKKU_REDIS_SILVER_URL=redis://:SOME_PASSWORD@dokku-redis-lollipop:6379/lollipop
 ```
 
-### graceful shutdown and restart of the Redis service container
-
-```shell
-# usage
-dokku redis:restart <service>
-```
-
-Restart the service:
-
-```shell
-dokku redis:restart lollipop
-```
-
 ### start a previously stopped Redis service
 
 ```shell
@@ -439,17 +442,30 @@ Stop the service and removes the running container:
 dokku redis:stop lollipop
 ```
 
-### unexpose a previously exposed Redis service
+### pause a running Redis service
 
 ```shell
 # usage
-dokku redis:unexpose <service>
+dokku redis:pause <service>
 ```
 
-Unexpose the service, removing access to it from the public interface (`0.0.0.0`):
+Pause the running container for the service:
 
 ```shell
-dokku redis:unexpose lollipop
+dokku redis:pause lollipop
+```
+
+### graceful shutdown and restart of the Redis service container
+
+```shell
+# usage
+dokku redis:restart <service>
+```
+
+Restart the service:
+
+```shell
+dokku redis:restart lollipop
 ```
 
 ### upgrade service <service> to the specified versions
@@ -461,9 +477,15 @@ dokku redis:upgrade <service> [--upgrade-flags...]
 
 flags:
 
+- `-c|--config-options <string>`: extra arguments to pass to the container create command
+- `-C|--custom-env <string>`: semi-colon delimited environment variables to start the service with
 - `-i|--image <string>`: the image to upgrade the service to
 - `-I|--image-version <string>`: the image version to upgrade the service to
+- `-N|--initial-network <string>`: the initial network to attach the service to
+- `-P|--post-create-network <strings>`: a comma-separated list of networks to attach the service container to after service creation
+- `-S|--post-start-network <strings>`: a comma-separated list of networks to attach the service container to after service start
 - `-R|--restart-apps`: whether to stop and start the linked apps around the upgrade
+- `-s|--shm-size <string>`: override shared memory size for the service docker container
 
 You can upgrade an existing service to a new image or image-version:
 
@@ -497,15 +519,15 @@ dokku redis:clone <service> <new-service> [--clone-flags...]
 
 flags:
 
-- `--config-options <string>`: extra arguments to pass to the container create command
-- `--custom-env <string>`: semi-colon delimited environment variables to start the service with
-- `--initial-network <string>`: the initial network to attach the service to
-- `--memory <int>`: container memory limit in megabytes (default: unlimited)
-- `--password <string>`: override the user-level service password
-- `--post-create-network <strings>`: a comma-separated list of networks to attach the service container to after service creation
-- `--post-start-network <strings>`: a comma-separated list of networks to attach the service container to after service start
-- `--root-password <string>`: override the root-level service password
-- `--shm-size <string>`: override shared memory size for the service docker container
+- `-c|--config-options <string>`: extra arguments to pass to the container create command
+- `-C|--custom-env <string>`: semi-colon delimited environment variables to start the service with
+- `-N|--initial-network <string>`: the initial network to attach the service to
+- `-m|--memory <int>`: container memory limit in megabytes (default: unlimited)
+- `-p|--password <string>`: override the user-level service password
+- `-P|--post-create-network <strings>`: a comma-separated list of networks to attach the service container to after service creation
+- `-S|--post-start-network <strings>`: a comma-separated list of networks to attach the service container to after service start
+- `-r|--root-password <string>`: override the root-level service password
+- `-s|--shm-size <string>`: override shared memory size for the service docker container
 
 You can clone an existing service to a new one:
 
@@ -556,6 +578,19 @@ dokku redis:links lollipop
 
 The underlying service data can be imported and exported with the following commands:
 
+### import a dump into the Redis service database
+
+```shell
+# usage
+dokku redis:import <service>
+```
+
+Import a datastore dump:
+
+```shell
+dokku redis:import lollipop < data.dump
+```
+
 ### export a dump of the Redis service database
 
 ```shell
@@ -575,19 +610,6 @@ You can redirect this output to a file:
 dokku redis:export lollipop > data.dump
 ```
 
-### import a dump into the Redis service database
-
-```shell
-# usage
-dokku redis:import <service>
-```
-
-Import a datastore dump:
-
-```shell
-dokku redis:import lollipop < data.dump
-```
-
 ### Backups
 
 Datastore backups are supported via AWS S3 and S3 compatible services like [minio](https://github.com/minio/minio).
@@ -599,29 +621,6 @@ If both passphrase and public key forms of encryption are set, the public key en
 The underlying core backup script is present [here](https://github.com/dokku/docker-s3backup/blob/main/backup.sh).
 
 Backups can be performed using the backup commands:
-
-### create a backup of the Redis service to an existing s3 bucket
-
-```shell
-# usage
-dokku redis:backup <service> <bucket-name> [-u|--use-iam]
-```
-
-flags:
-
-- `-u|--use-iam`: use the IAM profile associated with the current server
-
-Backup the `lollipop` service to the `my-s3-bucket` bucket on `AWS`:
-
-```shell
-dokku redis:backup lollipop my-s3-bucket --use-iam
-```
-
-Restore a backup file (assuming it was extracted via `tar -xf backup.tgz`):
-
-```shell
-dokku redis:import lollipop < backup-folder/export
-```
 
 ### set up authentication for backups on the Redis service
 
@@ -667,6 +666,89 @@ Remove s3 authentication:
 dokku redis:backup-deauth lollipop
 ```
 
+### create a backup of the Redis service to an existing s3 bucket
+
+```shell
+# usage
+dokku redis:backup <service> <bucket-name> [-u|--use-iam]
+```
+
+flags:
+
+- `-u|--use-iam`: use the IAM profile associated with the current server
+
+Backup the `lollipop` service to the `my-s3-bucket` bucket on `AWS`:
+
+```shell
+dokku redis:backup lollipop my-s3-bucket --use-iam
+```
+
+Restore a backup file (assuming it was extracted via `tar -xf backup.tgz`):
+
+```shell
+dokku redis:import lollipop < backup-folder/export
+```
+
+### set encryption for all future backups of Redis service
+
+```shell
+# usage
+dokku redis:backup-set-encryption <service> <passphrase>
+```
+
+Set the GPG-compatible passphrase for encrypting backups for backups:
+
+```shell
+dokku redis:backup-set-encryption lollipop
+```
+
+Public key encryption will take precendence over the passphrase encryption if both types are set.
+
+### set GPG Public Key encryption for all future backups of Redis service
+
+```shell
+# usage
+dokku redis:backup-set-public-key-encryption <service> <public-key-id>
+```
+
+Set the `GPG` Public Key for encrypting backups:
+
+```shell
+dokku redis:backup-set-public-key-encryption lollipop
+```
+
+The <public-key-id> is fetched from `keyserver.ubuntu.com`, unless the service names another one with the backup-keyserver property:
+
+```shell
+dokku redis:set lollipop backup-keyserver hkp://keys.example.com
+```
+
+### unset encryption for future backups of the Redis service
+
+```shell
+# usage
+dokku redis:backup-unset-encryption <service>
+```
+
+Unset the `GPG` encryption passphrase for backups:
+
+```shell
+dokku redis:backup-unset-encryption lollipop
+```
+
+### unset GPG Public Key encryption for future backups of the Redis service
+
+```shell
+# usage
+dokku redis:backup-unset-public-key-encryption <service>
+```
+
+Unset the `GPG` Public Key encryption for backups:
+
+```shell
+dokku redis:backup-unset-public-key-encryption lollipop
+```
+
 ### schedule a backup of the Redis service
 
 ```shell
@@ -705,40 +787,6 @@ Cat the contents of the configured backup cronfile for the service:
 dokku redis:backup-schedule-cat lollipop
 ```
 
-### set encryption for all future backups of Redis service
-
-```shell
-# usage
-dokku redis:backup-set-encryption <service> <passphrase>
-```
-
-Set the GPG-compatible passphrase for encrypting backups for backups:
-
-```shell
-dokku redis:backup-set-encryption lollipop
-```
-
-Public key encryption will take precendence over the passphrase encryption if both types are set.
-
-### set GPG Public Key encryption for all future backups of Redis service
-
-```shell
-# usage
-dokku redis:backup-set-public-key-encryption <service> <public-key-id>
-```
-
-Set the `GPG` Public Key for encrypting backups:
-
-```shell
-dokku redis:backup-set-public-key-encryption lollipop
-```
-
-The <public-key-id> is fetched from `keyserver.ubuntu.com`, unless the service names another one with the backup-keyserver property:
-
-```shell
-dokku redis:set lollipop backup-keyserver hkp://keys.example.com
-```
-
 ### unschedule the backup of the Redis service
 
 ```shell
@@ -750,32 +798,6 @@ Remove the scheduled backup from cron:
 
 ```shell
 dokku redis:backup-unschedule lollipop
-```
-
-### unset encryption for future backups of the Redis service
-
-```shell
-# usage
-dokku redis:backup-unset-encryption <service>
-```
-
-Unset the `GPG` encryption passphrase for backups:
-
-```shell
-dokku redis:backup-unset-encryption lollipop
-```
-
-### unset GPG Public Key encryption for future backups of the Redis service
-
-```shell
-# usage
-dokku redis:backup-unset-public-key-encryption <service>
-```
-
-Unset the `GPG` Public Key encryption for backups:
-
-```shell
-dokku redis:backup-unset-public-key-encryption lollipop
 ```
 
 ### Disabling `docker image pull` calls
