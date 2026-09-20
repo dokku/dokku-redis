@@ -6,7 +6,7 @@ setup() {
 }
 
 teardown() {
-  dokku --force "$PLUGIN_COMMAND_PREFIX:destroy" l
+  dokku "$PLUGIN_COMMAND_PREFIX:destroy" l -f
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:info) error when there are no arguments" {
@@ -30,7 +30,7 @@ teardown() {
   run dokku "$PLUGIN_COMMAND_PREFIX:info" test_with_underscores
   password="$(sudo cat "$PLUGIN_DATA_ROOT/test_with_underscores/PASSWORD")"
   assert_contains "${lines[*]}" "redis://:$password@dokku-redis-test-with-underscores:6379"
-  dokku --force "$PLUGIN_COMMAND_PREFIX:destroy" test_with_underscores
+  dokku "$PLUGIN_COMMAND_PREFIX:destroy" test_with_underscores -f
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:info) success with flag" {
