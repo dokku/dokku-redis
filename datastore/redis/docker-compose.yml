@@ -3,11 +3,19 @@ services:
   redis:
     image: "{{ .Image }}:{{ .ImageVersion }}"
 
+    # the config path follows the config volume, so a service that moved it
+    # still starts on its own file
     command:
       - redis-server
-      - /usr/local/etc/redis/redis.conf
+      - "{{ .Target.config }}/redis.conf"
       - --bind
       - 0.0.0.0
+
+    # redis writes its dump to its working directory, and the image's
+    # entrypoint hands its working directory to the redis user before starting
+    # it. Starting in the data volume, wherever it is mounted, is what has redis
+    # write its dump there and be allowed to
+    working_dir: "{{ .Target.data }}"
 
     volumes:
       - type: bind
@@ -74,10 +82,13 @@ x-dokku:
       exec: ["dokku-redis-export"]
       env:
         REDISCLI_AUTH: "{{ .Secret.password }}"
+        DUMP_FILE: "{{ .Target.data }}/dump.rdb"
 
     import:
       # redis reads its dump at boot and writes it again on shutdown, so the
-      # server has to be down while /data/dump.rdb is replaced
+      # server has to be down while the dump in the data volume is replaced
       mode: offline
       stdin: true
       exec: ["dokku-redis-import"]
+      env:
+        DUMP_FILE: "{{ .Target.data }}/dump.rdb"
