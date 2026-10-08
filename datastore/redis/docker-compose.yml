@@ -92,3 +92,22 @@ x-dokku:
       exec: ["dokku-redis-import"]
       env:
         DUMP_FILE: "{{ .Target.data }}/dump.rdb"
+
+    # every key in every database, written through to the dump and the append
+    # only file as any other write is, so a restart does not bring them back.
+    # redis-cli exits zero when the server refuses a command, which a FLUSHALL
+    # renamed or denied by the operator's config would be, so the reply is
+    # checked rather than the exit
+    reset:
+      exec:
+        - sh
+        - -c
+        - |
+          reply="$(redis-cli --no-auth-warning FLUSHALL)" || exit $?
+          if [ "$reply" != OK ]; then
+            echo "unable to flush the service: $reply" >&2
+            exit 1
+          fi
+        - dokku-redis-reset
+      env:
+        REDISCLI_AUTH: "{{ .Secret.password }}"
