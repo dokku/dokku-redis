@@ -38,7 +38,8 @@ configs:
   # seeded once into the config directory and never rewritten, so an operator
   # editing redis.conf keeps the edit. The Go implementation instead rewrites
   # the requirepass line on every create, which means a file supplied through
-  # REDIS_CONFIG_PATH becomes the operator's responsibility for auth here.
+  # REDIS_CONFIG_PATH becomes the operator's responsibility for auth here. A
+  # password change writes the requirepass line over and leaves the rest.
   redis_conf:
     content: |
       requirepass {{ .Secret.password }}
@@ -60,6 +61,41 @@ x-dokku:
       file: PASSWORD
       length: 64
       env: SERVICE_PASSWORD
+
+      # the password is in the seeded config file, which is never written
+      # again, so redis is told the new one while it runs and the line in the
+      # file is written over to match, keeping the rest of the file, its owner
+      # and its mode. The new password is read from stdin rather than passed
+      # as an argument, so it stays out of the container's process table.
+      change:
+        user: "0"
+        exec:
+          - sh
+          - -c
+          - |
+            set -e
+            config="$1"
+            reply="$(printf '%s' "$NEW_PASSWORD" | redis-cli --no-auth-warning -x CONFIG SET requirepass)"
+            if [ "$reply" != OK ]; then
+              echo "$reply" >&2
+              exit 1
+            fi
+            updated="$(while IFS= read -r line || [ -n "$line" ]; do
+              case "$line" in
+                requirepass\ *|requirepass) printf 'requirepass %s\n' "$NEW_PASSWORD" ;;
+                *) printf '%s\n' "$line" ;;
+              esac
+            done < "$config")"
+            case "$updated" in
+              *"requirepass $NEW_PASSWORD"*) ;;
+              *) updated="$(printf '%s\nrequirepass %s' "$updated" "$NEW_PASSWORD")" ;;
+            esac
+            printf '%s\n' "$updated" > "$config"
+          - dokku-redis-change-password
+          - "{{ .Target.config }}/redis.conf"
+        env:
+          REDISCLI_AUTH: "{{ .Secret.password }}"
+          NEW_PASSWORD: "{{ .NewSecret }}"
 
   commands:
     connect:
