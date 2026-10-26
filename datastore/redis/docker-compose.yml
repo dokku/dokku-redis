@@ -10,6 +10,11 @@ services:
       - "{{ .Target.config }}/redis.conf"
       - --bind
       - 0.0.0.0
+      # after the config file, so the service memory wins over a maxmemory
+      # line in it. Both elements render to nothing without one, and are left
+      # out, so redis keeps whatever its config says
+      - "{{ if .ServiceMemory }}--maxmemory{{ end }}"
+      - "{{ if .ServiceMemory }}{{ .ServiceMemory }}mb{{ end }}"
 
     # redis writes its dump to its working directory, and the image's
     # entrypoint hands its working directory to the redis user before starting
@@ -96,6 +101,43 @@ x-dokku:
         env:
           REDISCLI_AUTH: "{{ .Secret.password }}"
           NEW_PASSWORD: "{{ .NewSecret }}"
+
+  # redis takes a new maxmemory while it runs, so a change is told to it rather
+  # than waiting for the container to be made again. Cleared, it goes back to
+  # the maxmemory line in the config file, or to no limit without one, which
+  # is what a restart would start it with. The value is read from the
+  # environment, since an argument that renders to nothing is dropped and
+  # would move the config path into its place
+  service_memory:
+    change:
+      exec:
+        - sh
+        - -c
+        - |
+          config="$1"
+          value="$SERVICE_MEMORY"
+          if [ -n "$value" ]; then
+            value="${value}mb"
+          else
+            value=0
+            if [ -f "$config" ]; then
+              while IFS= read -r line || [ -n "$line" ]; do
+                case "$line" in
+                  maxmemory\ *) value="${line#maxmemory }" ;;
+                esac
+              done < "$config"
+            fi
+          fi
+          reply="$(redis-cli --no-auth-warning CONFIG SET maxmemory "$value")" || exit $?
+          if [ "$reply" != OK ]; then
+            echo "unable to set maxmemory: $reply" >&2
+            exit 1
+          fi
+        - dokku-redis-service-memory
+        - "{{ .Target.config }}/redis.conf"
+      env:
+        REDISCLI_AUTH: "{{ .Secret.password }}"
+        SERVICE_MEMORY: "{{ .ServiceMemory }}"
 
   commands:
     connect:
