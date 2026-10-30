@@ -30,15 +30,18 @@ redis:backup-unschedule <service> [--id <id>|--all] # unschedule the backup of t
 redis:backup-unset-encryption <service> [--id <id>] # unset encryption for future backups of the Redis service
 redis:backup-unset-public-key-encryption <service> [--id <id>] # unset GPG Public Key encryption for future backups of the Redis service
 redis:clone <service> <new-service> [--clone-flags...] # create container <new-name> then copy data from <name> into <new-name>
-redis:connect <service>                            # connect to the service via the redis connection tool
+redis:connect <service> [--database <database>] [--user <user>] # connect to the service via the redis connection tool
 redis:create <service> [--create-flags...]         # create a Redis service
+redis:create-user <service> <user> [<password>]    # create a user in the Redis service
 redis:destroy <service> [-f|--force]               # delete the Redis service/data/container if there are no links left
+redis:destroy-user <service> <user> [-f|--force]   # destroy a user created in the Redis service
 redis:enter <service>                              # enter or run a command in a running Redis service container
 redis:exists <service>                             # check if the Redis service exists
 redis:export <service> [-f|--file <path>] [--force] # export a dump of the Redis service database
 redis:expose <service> <ports...>                  # expose a Redis service on custom host:port if provided (random port on the 0.0.0.0 interface if otherwise unspecified)
 redis:import <service> [-f|--file <path>]          # import a dump into the Redis service database
 redis:info [<service>] [--info-flags...]           # print the service information
+redis:label <service> <key=value>...               # add docker labels to the service container
 redis:link <service> [<app>] [--link-flags...]     # link the Redis service to the app
 redis:linked <service> [<app>]                     # check if the Redis service is linked to an app
 redis:links <service>                              # list all apps linked to the Redis service
@@ -51,9 +54,11 @@ redis:reexpose <service>                           # reexpose a Redis service, a
 redis:reset <service> [-f|--force]                 # delete all data in the Redis service, keeping the service and its links
 redis:restart <service>                            # graceful shutdown and restart of the Redis service container
 redis:set <service> <key> [<value>] [--id <id>]    # set or clear a property for a service
+redis:set-user-password <service> <user> [<password>] [-n|--no-restart] # change the password of a user created in the Redis service
 redis:start <service>                              # start a previously stopped Redis service
 redis:stop <service>                               # stop a running Redis service
 redis:unexpose <service>                           # unexpose a previously exposed Redis service
+redis:unlabel [--all] <service> [<key>...]         # remove one or all docker labels from the service container
 redis:unlink <service> [<app>] [-n|--no-restart]   # unlink the Redis service from the app
 redis:unmount [--all] <service> [<source:container-dir>...] # remove one or all mounts from the service container
 redis:upgrade <service> [--upgrade-flags...]       # upgrade service <service> to the specified versions
@@ -74,12 +79,14 @@ dokku redis:create <service> [--create-flags...]
 
 flags:
 
+- `--backend <string>`: the execution backend to create the service with, docker or compose (default: docker)
 - `-c|--config-options <string>`: extra arguments for the process the service container runs, not docker flags; use mount for mounts
 - `-C|--custom-env <string>`: semi-colon delimited environment variables to start the service with
 - `--definition <string>`: the definition to run the service on, instead of the one its image and version resolve to
 - `-i|--image <string>`: the image name to start the service with
 - `-I|--image-version <string>`: the image version to start the service with
 - `-N|--initial-network <string>`: the initial network to attach the service to
+- `--label <stringArray>`: a docker label to put on the service container, as <key>=<value>, repeatable
 - `--log-driver <string>`: the docker logging driver to run the service container with (default: the daemon's own)
 - `--log-opt <strings>`: a comma-separated list of key=value docker log options for the service container
 - `-m|--memory <int>`: container memory limit in megabytes (default: unlimited)
@@ -103,9 +110,7 @@ dokku redis:create lollipop
 You can also specify the image and image version to use for the service. It *must* be compatible with the redis image.
 
 ```shell
-export REDIS_IMAGE="redis"
-export REDIS_IMAGE_VERSION="8.10.2"
-dokku redis:create lollipop
+dokku redis:create lollipop --image "redis" --image-version "8.10.2"
 ```
 
 An image other than redis has no version to fall back on, because the version this plugin pins belongs to redis, so name one alongside it.
@@ -117,8 +122,7 @@ dokku redis:create lollipop --image <image> --image-version <version>
 You can also specify custom environment variables to start the redis service in semicolon-separated form.
 
 ```shell
-export REDIS_CUSTOM_ENV="USER=alpha;HOST=beta"
-dokku redis:create lollipop
+dokku redis:create lollipop --custom-env "USER=alpha;HOST=beta"
 ```
 
 The container log is bounded by whatever `dokku logs:set --global max-size` says, and by dokku's own default where it says nothing, which a service may override for itself.
@@ -133,7 +137,13 @@ The container is restarted by docker whenever it stops, which a service may chan
 dokku redis:create lollipop --restart unless-stopped
 ```
 
-The service is waited on until it answers, for as long as the datastore's own default, which a slow host may raise for every service with `REDIS_WAIT_TIMEOUT` or a service may raise for itself.
+The container carries a docker label for each --label, which may be repeated, beyond the ones dokku puts on it. Keys starting with `dokku.` or `com.dokku.` are dokku's own and are refused.
+
+```shell
+dokku redis:create lollipop --label traefik.enable=true --label com.example.team=data
+```
+
+The service is waited on until it answers, for as long as the datastore's own default, which a slow host may raise for every service with `dokku redis:set --global wait-timeout` or a service may raise for itself.
 
 ```shell
 dokku redis:create lollipop --wait-timeout 120
@@ -154,7 +164,6 @@ dokku redis:create lollipop --volume /var/lib/dokku/data/storage/lollipop:/opt/e
 The definition's own volumes can be mounted at another path in the container, for an image that keeps its data somewhere else, with --volume-target, which may be repeated.
 
 ```shell
-export REDIS_VOLUME_TARGETS="data=/srv/redis"
 dokku redis:create lollipop --volume-target data=/srv/redis
 ```
 
@@ -217,6 +226,7 @@ flags:
 - `--custom-env`: show the custom environment the service container is run with
 - `--data-dir`: show the service data directory
 - `--database-name`: show the name of the database inside the service
+- `--databases`: show the databases an app can be linked to in the service, space separated
 - `--definition`: show the definition the service was created with
 - `--dsn`: show the service DSN
 - `--export-args`: show the extra arguments every export of the service is run with
@@ -230,6 +240,7 @@ flags:
 - `--import-args`: show the extra arguments every import into the service is run with
 - `--initial-network`: show the initial network being connected to
 - `--internal-ip`: show the service internal ip
+- `--labels`: show the docker labels the service container is made with beyond dokku's own, as a json object
 - `--links`: show the service app links
 - `--log-driver`: show the docker logging driver the service container is run with
 - `--log-opt`: show the docker log options the service container is run with
@@ -247,6 +258,7 @@ flags:
 - `--service-root`: show the service root directory
 - `--shm-size`: show the shared memory size the service container is run with
 - `--status`: show the service running status
+- `--users`: show the users an app can be linked as in the service, space separated
 - `--version`: show the service image version
 - `--volume-targets`: show the container paths the service's volumes are mounted at in place of the definition's
 - `--wait-timeout`: show the seconds the service is waited on to become ready
@@ -276,6 +288,8 @@ dokku redis:info lollipop --dsn
 dokku redis:info lollipop --status
 dokku redis:info lollipop --internal-ip
 dokku redis:info lollipop --initial-network
+dokku redis:info lollipop --databases
+dokku redis:info lollipop --users
 ```
 
 > NOTE: a flag cannot be combined with --format, and only one may be given
@@ -374,27 +388,18 @@ dokku redis:link <service> [<app>] [--link-flags...]
 flags:
 
 - `-a|--alias <string>`: the prefix of the config variable the service url is set as on the app, which is suffixed with _URL
+- `--database <string>`: the database in the service to link the app to, in place of the one named for the service
 - `-e|--env-var <string>`: the full name of the config variable the service url is set as on the app, used instead of an alias and not suffixed with _URL
 - `-n|--no-restart`: whether to skip restarting the app
 - `-q|--querystring <string>`: ampersand delimited querystring arguments to append to the service url after a ?
+- `--user <string>`: the user in the service to link the app as, in place of the one the service was created with
 
-A redis service can be linked to a container. This will use native docker links via the docker-options plugin. Here we link it to our `playground` app.
+A redis service can be linked to a container. The app and the service are put on a private docker network made for that link alone, so the app reaches the service as dokku-redis-lollipop, and two apps linked to the same service cannot reach each other through it. The app's running containers join it straight away, and the containers it is built, deployed and run in from then on join it when they are made. Here we link it to our `playground` app.
 
 > NOTE: this will restart your app
 
 ```shell
 dokku redis:link lollipop playground
-```
-
-The following environment variables will be set automatically by docker (not on the app itself, so they won’t be listed when calling dokku config):
-
-```
-DOKKU_REDIS_LOLLIPOP_NAME=/lollipop/DATABASE
-DOKKU_REDIS_LOLLIPOP_PORT=tcp://172.17.0.1:6379
-DOKKU_REDIS_LOLLIPOP_PORT_6379_TCP=tcp://172.17.0.1:6379
-DOKKU_REDIS_LOLLIPOP_PORT_6379_TCP_PROTO=tcp
-DOKKU_REDIS_LOLLIPOP_PORT_6379_TCP_PORT=6379
-DOKKU_REDIS_LOLLIPOP_PORT_6379_TCP_ADDR=172.17.0.1
 ```
 
 The following will be set on the linked application by default:
@@ -403,7 +408,11 @@ The following will be set on the linked application by default:
 REDIS_URL=redis://:SOME_PASSWORD@dokku-redis-lollipop:6379
 ```
 
-The host exposed here only works internally in docker containers. If you want your container to be reachable from outside, you should use the `expose` subcommand. Another service can be linked to your app:
+The host exposed here only works internally in docker containers. If you want your container to be reachable from outside, you should use the `expose` subcommand. Earlier versions of the plugin linked an app with a docker link, which docker has deprecated, and which set `DOKKU_REDIS_LOLLIPOP_PORT` style variables on the app's containers. Docker 29 no longer sets them, so an app reading them should read `REDIS_URL` instead. Updating the plugin moves every linked app onto the network for its link, and the docker link is gone from each app's containers once they are restarted.
+
+> NOTE: every link uses a docker network of its own. docker's default address pools hold about 31 networks, so a server with many links may need a larger default-address-pools setting in /etc/docker/daemon.json.
+
+Another service can be linked to your app:
 
 ```shell
 dokku redis:link other_service playground
@@ -458,6 +467,20 @@ This will cause `REDIS_URL` to be set as:
 redis2://:SOME_PASSWORD@dokku-redis-lollipop:6379
 ```
 
+An app can be linked to another of the service's 16 databases, numbered from 0, with the `--database` flag:
+
+```shell
+dokku redis:link lollipop playground --database 3
+```
+
+An app can be linked as a user made with create-user rather than as the service's own with the `--user` flag, which can be combined with the `--database` flag:
+
+```shell
+dokku redis:link lollipop playground --user painter
+```
+
+The database and user a link was made on are recorded, so unlink, promote and a password change find the url they gave the app. An app that is already linked has to be unlinked and linked again to move it to another database or user.
+
 ### unlink the Redis service from the app
 
 ```shell
@@ -477,7 +500,7 @@ You can unlink a redis service:
 dokku redis:unlink lollipop playground
 ```
 
-An app is still linked after its `REDIS_URL` is changed to point elsewhere, and is unlinked the same way. The variable it now holds is not the service's, so it is left alone, nothing is unset, the app is not restarted, and a warning says so. A variable link set that has only had its scheme or querystring changed still points at the service, and is unset.
+The network the link ran over is removed straight away, so the app's running containers can no longer reach the service, even with `--no-restart`. An app is still linked after its `REDIS_URL` is changed to point elsewhere, and is unlinked the same way. The variable it now holds is not the service's, so it is left alone, nothing is unset, the app is not restarted, and a warning says so. A variable link set that has only had its scheme or querystring changed still points at the service, and is unset.
 
 ### set or clear a property for a service
 
@@ -489,6 +512,7 @@ dokku redis:set <service> <key> [<value>] [--id <id>]
 flags:
 
 - `--allow-restart`: restart or reexpose the service when the property only takes effect that way and its value changed
+- `--global`: set the property for every service of the datastore, taking <datastore-type> <key> [<value>] with no service name
 - `--id <string>`: record the property on this backup schedule instead of on the service
 - `--no-restart`: do not restart the linked apps when a password change updates the url they hold
 
@@ -831,6 +855,54 @@ dokku redis:unmount --all lollipop
 
 > NOTE: the mount is removed from the container the next time one is built. redis:restart keeps the container it has, so use redis:stop and then redis:start on a service that is already running.
 
+### add docker labels to the service container
+
+```shell
+# usage
+dokku redis:label <service> <key=value>...
+```
+
+Add a label to the service container:
+
+```shell
+dokku redis:label lollipop traefik.enable=true
+```
+
+Several may be given at once, and a value may hold commas and spaces:
+
+```shell
+dokku redis:label lollipop com.example.team=data "traefik.http.routers.lollipop.middlewares=auth,compress"
+```
+
+Labelling a key the service already has replaces its value. Keys starting with `dokku.` or `com.dokku.` are dokku's own and are refused.
+
+> NOTE: a label reaches the container the next time one is built. redis:restart keeps the container it has, so use redis:stop and then redis:start on a service that is already running.
+
+### remove one or all docker labels from the service container
+
+```shell
+# usage
+dokku redis:unlabel [--all] <service> [<key>...]
+```
+
+flags:
+
+- `--all`: remove every label the service has
+
+Remove a label, naming it by its key:
+
+```shell
+dokku redis:unlabel lollipop traefik.enable
+```
+
+Remove every label the service was given:
+
+```shell
+dokku redis:unlabel --all lollipop
+```
+
+> NOTE: the label is removed from the container the next time one is built. redis:restart keeps the container it has, so use redis:stop and then redis:start on a service that is already running.
+
 ### Service Lifecycle
 
 The lifecycle of each service can be managed through the following commands:
@@ -839,8 +911,13 @@ The lifecycle of each service can be managed through the following commands:
 
 ```shell
 # usage
-dokku redis:connect <service>
+dokku redis:connect <service> [--database <database>] [--user <user>]
 ```
+
+flags:
+
+- `--database <string>`: the database in the service to connect to, in place of the one named for the service
+- `--user <string>`: the user in the service to connect as, in place of the one the service was created with
 
 Connect to the service via the redis connection tool:
 
@@ -854,6 +931,18 @@ The connection tool only shows a prompt when it is given a terminal, which ssh a
 
 ```shell
 dokku redis:connect lollipop < statements.txt
+```
+
+Connect to another of the service's databases rather than the one the service was created with:
+
+```shell
+dokku redis:connect lollipop --database 3
+```
+
+Connect as a user made with create-user rather than as the service's own:
+
+```shell
+dokku redis:connect lollipop --user painter
 ```
 
 ### enter or run a command in a running Redis service container
@@ -1071,6 +1160,7 @@ flags:
 - `-i|--image <string>`: the image to upgrade the service to
 - `-I|--image-version <string>`: the image version to upgrade the service to
 - `-N|--initial-network <string>`: the initial network to attach the service to
+- `--label <stringArray>`: a docker label to put on the service container, as <key>=<value>, repeatable; replaces every label the service has
 - `--log-driver <string>`: the docker logging driver to run the service container with (default: the daemon's own)
 - `--log-opt <strings>`: a comma-separated list of key=value docker log options for the service container
 - `-m|--memory <int>`: container memory limit in megabytes, 0 for unlimited
@@ -1152,6 +1242,7 @@ flags:
 - `-i|--image <string>`: the image name to start the service with (default: the source's)
 - `-I|--image-version <string>`: the image version to start the service with (default: the source's)
 - `-N|--initial-network <string>`: the initial network to attach the service to
+- `--label <stringArray>`: a docker label to put on the service container, as <key>=<value>, repeatable; replaces every label the source has
 - `--log-driver <string>`: the docker logging driver to run the service container with (default: the daemon's own)
 - `--log-opt <strings>`: a comma-separated list of key=value docker log options for the service container
 - `-m|--memory <int>`: container memory limit in megabytes (default: unlimited)
@@ -1172,7 +1263,7 @@ You can clone an existing service to a new one:
 dokku redis:clone lollipop lollipop-2
 ```
 
-The new service starts from the settings of the one it copies: its config options, custom env, memory, service memory, shm size, networks, log driver, log options, restart policy, mounts, volume targets, backup keyserver, backup storage class and backup timestamp. A flag passed to clone overrides that one setting, and a flag passed empty clears it:
+The new service starts from the settings of the one it copies: its config options, custom env, memory, service memory, shm size, networks, log driver, log options, restart policy, labels, mounts, volume targets, backup keyserver, backup storage class and backup timestamp. A flag passed to clone overrides that one setting, and a flag passed empty clears it:
 
 ```shell
 dokku redis:clone lollipop lollipop-2 --restart no --custom-env ""
@@ -1315,6 +1406,93 @@ The service name is asked for before anything is deleted, unless --force is give
 
 ```shell
 dokku redis:reset lollipop --force
+```
+
+### Databases and Users
+
+A service runs in a container of its own. Several apps can share one service, and the memory its container uses, by each being linked to a database or user of its own within it, made with the following commands. Every user made in a service can use every database in it.
+
+### create a user in the Redis service
+
+```shell
+# usage
+dokku redis:create-user <service> <user> [<password>]
+```
+
+Create a user named `painter` in the running `lollipop` service, with a generated password:
+
+```shell
+dokku redis:create-user lollipop painter
+```
+
+The user is given access to every database the service holds, and to every database made in it later. A password of your own may be given instead. It may only contain letters, digits, `.`, `_`, `~` and `-`.
+
+```shell
+dokku redis:create-user lollipop painter SOME_PASSWORD
+```
+
+A user name may only contain lowercase letters, digits and `_`, start with a letter or `_`, and be at most 32 characters long. Link an app as the user with the `--user` flag, which hands it the password in its url:
+
+```shell
+dokku redis:link lollipop playground --user painter
+```
+
+### destroy a user created in the Redis service
+
+```shell
+# usage
+dokku redis:destroy-user <service> <user> [-f|--force]
+```
+
+flags:
+
+- `-f|--force`: destroy it without asking for confirmation
+
+Destroy the `painter` user made in the running `lollipop` service:
+
+```shell
+dokku redis:destroy-user lollipop painter
+```
+
+The user name is asked for before it is destroyed, unless --force is given. A user an app is still linked as is refused, and the one the service was created with is only removed with the service.
+
+```shell
+dokku redis:destroy-user lollipop painter --force
+```
+
+### change the password of a user created in the Redis service
+
+```shell
+# usage
+dokku redis:set-user-password <service> <user> [<password>] [-n|--no-restart]
+```
+
+flags:
+
+- `-n|--no-restart`: whether to skip restarting the apps linked as the user
+
+Give the `painter` user made in the running `lollipop` service a generated password:
+
+```shell
+dokku redis:set-user-password lollipop painter
+```
+
+Or a password of your own:
+
+```shell
+dokku redis:set-user-password lollipop painter SOME_PASSWORD
+```
+
+Every app linked as the user is given the new url and restarted, unless --no-restart is given, and the apps linked as any other user are left alone.
+
+```shell
+dokku redis:set-user-password lollipop painter --no-restart
+```
+
+The password of the user the service was created with is changed with set instead:
+
+```shell
+dokku redis:set lollipop password SOME_PASSWORD
 ```
 
 ### Backups
@@ -1674,7 +1852,7 @@ dokku redis:backup-logs lollipop --tail=5
 
 ### Service properties
 
-Every setting a service has after it is created, other than its image, its mounts and its backup schedule, each of which has a command of its own, is changed with `dokku redis:set lollipop <key> <value>`, and cleared by giving no value. `dokku redis:info lollipop` reports each of them, with a credential reported as a fingerprint rather than its value. A setting the container is made with only reaches it once the container is built again, and `set` warns when that is the case: `dokku redis:restart` keeps the container the service has, so use `dokku redis:stop` and then `dokku redis:start`. Passing `--allow-restart` to `set` does that, or the `reexpose` an expose setting takes, whenever the value changed, and leaves the service alone when it did not.
+Every setting a service has after it is created, other than its image, its mounts, its labels and its backup schedule, each of which has a command of its own, is changed with `dokku redis:set lollipop <key> <value>`, and cleared by giving no value. `dokku redis:info lollipop` reports each of them, with a credential reported as a fingerprint rather than its value. A setting the container is made with only reaches it once the container is built again, and `set` warns when that is the case: `dokku redis:restart` keeps the container the service has, so use `dokku redis:stop` and then `dokku redis:start`. Passing `--allow-restart` to `set` does that, or the `reexpose` an expose setting takes, whenever the value changed, and leaves the service alone when it did not.
 
 | Property | Description | Takes effect |
 | --- | --- | --- |
@@ -1735,7 +1913,7 @@ A `port-source-range` cannot be enforced on a port the service container publish
 
 A service is waited on until it answers on its port after it is created, cloned, started, restarted, upgraded or exposed. If it takes longer than that to start - on a slow host, or with an image that does more on its first boot - the command fails with `ERROR: unable to connect`.
 
-To wait longer for every redis service on the host, set the `REDIS_WAIT_TIMEOUT` environment variable to a number of seconds. To wait longer for a single service, set its `wait-timeout` property with `dokku redis:set` or pass `--wait-timeout` to `create`, `clone` or `upgrade`. The service's own setting is used first, then the environment variable, then the datastore's default.
+To wait longer for every redis service on the host, set the `wait-timeout` global property to a number of seconds with `dokku redis:set --global wait-timeout 120`. To wait longer for a single service, set its `wait-timeout` property with `dokku redis:set` or pass `--wait-timeout` to `create`, `clone` or `upgrade`. The service's own setting is used first, then the global property, then the datastore's default.
 
 ### Datastore memory
 
@@ -1745,7 +1923,7 @@ It is separate from the container's `memory` limit, which is unlimited unless it
 
 ### Moving where a service's volumes are mounted
 
-Each volume a service mounts is named by the directory it lives in under the service's own directory, and is mounted where the datastore's definition says. To mount one somewhere else in the container, for an image that keeps its data at another path, set the service's `volume-targets` property with `dokku redis:set`, pass `--volume-target` to `create`, `clone` or `upgrade`, or set the `REDIS_VOLUME_TARGETS` environment variable before `create`. Each is written as `<volume>=<container-path>`, several separated by spaces, and `dokku redis:info lollipop --volume-targets` shows the ones a service moved.
+Each volume a service mounts is named by the directory it lives in under the service's own directory, and is mounted where the datastore's definition says. To mount one somewhere else in the container, for an image that keeps its data at another path, set the service's `volume-targets` property with `dokku redis:set`, or pass `--volume-target` to `create`, `clone` or `upgrade`. Each is written as `<volume>=<container-path>`, several separated by spaces, and `dokku redis:info lollipop --volume-targets` shows the ones a service moved.
 
 | Definition | Volume | Mounted at |
 | --- | --- | --- |
@@ -1756,6 +1934,6 @@ Moving a volume changes where it is mounted, not where the image reads and write
 
 ### Disabling `docker image pull` calls
 
-If you wish to disable the `docker image pull` calls that the plugin triggers, you may set the `REDIS_DISABLE_PULL` environment variable to `true`. Once disabled, you will need to pull the service image you wish to deploy as shown in the `stderr` output.
+If you wish to disable the `docker image pull` calls that the plugin triggers, you may set the `disable-pull` global property to `true` with `dokku redis:set --global disable-pull true`. Once disabled, you will need to pull the service image you wish to deploy as shown in the `stderr` output.
 
 Please ensure the proper images are in place when `docker image pull` is disabled.
