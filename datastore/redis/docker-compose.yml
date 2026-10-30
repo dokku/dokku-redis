@@ -10,6 +10,10 @@ services:
       - "{{ .Target.config }}/redis.conf"
       - --bind
       - 0.0.0.0
+      # the users made in the service, beside the default one. In the data
+      # volume, which redis owns, since saving them writes the file again
+      - --aclfile
+      - "{{ .Target.data }}/users.acl"
       # after the config file, so the service memory wins over a maxmemory
       # line in it. Both elements render to nothing without one, and are left
       # out, so redis keeps whatever its config says
@@ -33,6 +37,9 @@ services:
     configs:
       - source: redis_conf
         target: /usr/local/etc/redis/redis.conf
+      - source: users_acl
+        target: /data/users.acl
+        mode: "0640"
 
     ports:
       - name: native
@@ -49,17 +56,126 @@ configs:
     content: |
       requirepass {{ .Secret.password }}
 
+  # redis reads its users from here once it is told to, the default one
+  # included, which would otherwise be left with no password at all. It is
+  # seeded with the default user alone and written by redis from then on.
+  users_acl:
+    content: |
+      user default on >{{ .Secret.password }} ~* &* +@all
+
 x-dokku:
   plugin: redis
   title: Redis
   scheme: redis
   alias: REDIS
-  dsn: "{{ .Scheme }}://:{{ .Secret.password }}@{{ .Host }}:{{ .Port.native }}"
+  # the default user and database are left out, as they always have been, so a
+  # link on them keeps the url it was given
+  dsn: "{{ .Scheme }}://{{ if ne .Username .DefaultUsername }}{{ .Username }}{{ end }}:{{ .Password }}@{{ .Host }}:{{ .Port.native }}{{ if ne .Database .DefaultDatabase }}/{{ .Database }}{{ end }}"
 
   # the redis image ships no probe whose exit status can be trusted without the
   # password, so readiness stays on the dokku/wait sidecar that every datastore
   # uses today rather than on a compose healthcheck
   wait: native
+
+  hooks:
+    pre_create:
+      # the image's entrypoint hands the data volume to the redis user only
+      # while it holds nothing but dumps, so the seeded acl file would leave
+      # both it and the volume unreadable to redis. It runs as root with the
+      # entrypoint cleared, since the entrypoint would start redis rather than
+      # run this.
+      user: "0"
+      entrypoint: ""
+      volumes:
+        - type: bind
+          source: "{{ .HostRoot }}/data"
+          target: /seed-data
+      exec: ["chown", "-R", "redis:redis", "/seed-data"]
+
+  # redis always holds sixteen databases, numbered from zero, so a link only
+  # says which it wants and there is none to make. The bound is the redis
+  # default rather than the databases line of the service's own config, which
+  # an operator raising it would have to keep in step with
+  databases:
+    fixed: 16
+    default: "0"
+
+  # a user is an acl user with every permission the default user has, kept in
+  # the acl file in the data volume so that it outlives a restart. Each change
+  # is saved to the file as it is made. A service made before the file was
+  # read has nowhere to keep one until its container is made again. The
+  # password is read from stdin rather than passed as an argument, so it stays
+  # out of the container's process table.
+  users:
+    default: default
+    secret: password
+    create:
+      exec:
+        - sh
+        - -c
+        - |
+          set -e
+          aclfile="$(redis-cli --no-auth-warning CONFIG GET aclfile | sed -n 2p)"
+          if [ -z "$aclfile" ]; then
+            echo "the service has nowhere to keep its users, which it is only given once its container has been made again: run dokku redis:stop and then dokku redis:start" >&2
+            exit 1
+          fi
+          reply="$(printf '>%s' "$NEW_PASSWORD" | redis-cli --no-auth-warning -x ACL SETUSER "$1" on "~*" "&*" "+@all")"
+          if [ "$reply" != OK ]; then
+            echo "$reply" >&2
+            exit 1
+          fi
+          reply="$(redis-cli --no-auth-warning ACL SAVE)"
+          if [ "$reply" != OK ]; then
+            echo "unable to save the users: $reply" >&2
+            exit 1
+          fi
+        - dokku-redis-create-user
+        - "{{ .Args.user }}"
+      env:
+        REDISCLI_AUTH: "{{ .Secret.password }}"
+        NEW_PASSWORD: "{{ .NewSecret }}"
+    destroy:
+      exec:
+        - sh
+        - -c
+        - |
+          set -e
+          reply="$(redis-cli --no-auth-warning ACL DELUSER "$1")"
+          if [ "$reply" != 1 ]; then
+            echo "$reply" >&2
+            exit 1
+          fi
+          reply="$(redis-cli --no-auth-warning ACL SAVE)"
+          if [ "$reply" != OK ]; then
+            echo "unable to save the users: $reply" >&2
+            exit 1
+          fi
+        - dokku-redis-destroy-user
+        - "{{ .Args.user }}"
+      env:
+        REDISCLI_AUTH: "{{ .Secret.password }}"
+    change:
+      exec:
+        - sh
+        - -c
+        - |
+          set -e
+          reply="$(printf '>%s' "$NEW_PASSWORD" | redis-cli --no-auth-warning -x ACL SETUSER "$1" resetpass)"
+          if [ "$reply" != OK ]; then
+            echo "$reply" >&2
+            exit 1
+          fi
+          reply="$(redis-cli --no-auth-warning ACL SAVE)"
+          if [ "$reply" != OK ]; then
+            echo "unable to save the users: $reply" >&2
+            exit 1
+          fi
+        - dokku-redis-change-user-password
+        - "{{ .Args.user }}"
+      env:
+        REDISCLI_AUTH: "{{ .Secret.password }}"
+        NEW_PASSWORD: "{{ .NewSecret }}"
 
   secrets:
     password:
@@ -96,6 +212,16 @@ x-dokku:
               *) updated="$(printf '%s\nrequirepass %s' "$updated" "$NEW_PASSWORD")" ;;
             esac
             printf '%s\n' "$updated" > "$config"
+            # the acl file holds the default user too, and would bring the
+            # old password back the next time redis starts
+            aclfile="$(REDISCLI_AUTH="$NEW_PASSWORD" redis-cli --no-auth-warning CONFIG GET aclfile | sed -n 2p)"
+            if [ -n "$aclfile" ]; then
+              reply="$(REDISCLI_AUTH="$NEW_PASSWORD" redis-cli --no-auth-warning ACL SAVE)"
+              if [ "$reply" != OK ]; then
+                echo "unable to save the new password to the acl file: $reply" >&2
+                exit 1
+              fi
+            fi
           - dokku-redis-change-password
           - "{{ .Target.config }}/redis.conf"
         env:
@@ -140,10 +266,18 @@ x-dokku:
         SERVICE_MEMORY: "{{ .ServiceMemory }}"
 
   commands:
+    # as the user and on the database asked for, each left out when it is the
+    # default
     connect:
-      exec: ["redis-cli", "--no-auth-warning"]
+      exec:
+        - redis-cli
+        - --no-auth-warning
+        - "{{ if ne .Username .DefaultUsername }}--user{{ end }}"
+        - "{{ if ne .Username .DefaultUsername }}{{ .Username }}{{ end }}"
+        - "{{ if ne .Database .DefaultDatabase }}-n{{ end }}"
+        - "{{ if ne .Database .DefaultDatabase }}{{ .Database }}{{ end }}"
       env:
-        REDISCLI_AUTH: "{{ .Secret.password }}"
+        REDISCLI_AUTH: "{{ .Password }}"
         LANG: C.UTF-8
         LC_ALL: C.UTF-8
 
